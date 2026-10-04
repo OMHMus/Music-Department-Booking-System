@@ -108,7 +108,12 @@ h2{font-size:19px}h3{font-size:16px}
 .members .mname{min-width:0;flex:1 1 14rem;overflow-wrap:anywhere}
 .btnlink{display:inline-block;border:1.5px solid var(--gold);color:var(--acc-text);border-radius:999px;padding:.4rem .9rem;font-weight:600;font-size:13px;text-decoration:none}
 .btnlink:hover{background:var(--soft)}
-.inv{margin-top:4px}.actsrow{margin:14px 0 0}
+.inv{margin-top:4px}
+.invh{font-size:15px;margin:4px 0 8px}
+.notlisted{margin-top:12px;padding:10px 14px;border:1px dashed var(--line);border-radius:10px}
+.notlisted summary{cursor:pointer;font-weight:600;color:var(--acc-text)}
+.notlisted[open] summary{margin-bottom:6px}
+.notlisted .mut{margin:0 0 8px}.actsrow{margin:14px 0 0}
 .invites{border-color:var(--gold)}
 .rule{flex-basis:100%;margin:2px 0 0}
 /* Rooms */
@@ -401,10 +406,23 @@ async function regsView(){
 }
 // ----- Bands -----
 const SITE=location.origin+location.pathname;
-function inviteMail(band,email){
-  const sub=`Join my band "${band}" on the Sexey's practice room booking`;
-  const body=`Hi,\n\nI've added you to my band "${band}" on the Sexey's School Music Department practice room booking site, so we can book rooms to rehearse together.\n\n1. Go to ${SITE}\n2. Create an account with this school email address (${email})\n3. Complete the registration and wait for a member of staff to approve you\n4. Open "My bands" and accept the invitation\n\nThanks,\n${me.full_name}`;
+// Same wording as the automatic email (supabase/functions/band-invite-email); used only as a fallback
+function inviteMail(band,email,hasAccount){
+  const sub=`${me.full_name} is inviting you to join the band ${band}`;
+  const steps=hasAccount?`1. Log in at ${SITE}\n2. Open "My bands" and accept (or decline) the invitation`
+    :`1. Go to ${SITE}\n2. Create an account with this school email address (${email})\n3. Complete the registration and wait for a member of Music staff to approve you\n4. Log in, open "My bands" and accept the invitation`;
+  const body=`${me.full_name} is inviting you to join the band ${band}.\n\n${steps}\n\nThanks,\n${me.full_name}`;
   return `mailto:${email}?subject=${encodeURIComponent(sub)}&body=${encodeURIComponent(body)}`;
+}
+// Send the invitation email from the system. Falls back to the pupil's own email app if
+// automatic email isn't set up yet (or fails). Returns a message for the page.
+async function emailInvite(memberId,band,email,hasAccount){
+  let r={};try{const x=await sb.functions.invoke('band-invite-email',{body:{member_id:memberId}});r=x.error?{sent:false,reason:'error'}:x.data||{}}catch(e){r={sent:false,reason:'error'}}
+  if(r.sent)return email?`An invitation email has been sent to ${email}.`:'An invitation email has been sent to them.';
+  if(r.reason==='refused')return r.message||'That invitation can\'t be emailed right now.';
+  if(!email)return'They\'ll see the invitation in My bands next time they log in.'; // listed pupils: no address shown to other pupils
+  location.href=inviteMail(band,email,hasAccount);
+  return`Your email app should open with the invitation ready to send to ${email}. If it doesn't, tell them to ${hasAccount?'open My bands':'create an account on this site'}.`;
 }
 function memberState(m){
   if(m.is_lead)return['ok','Leader'];
@@ -416,16 +434,23 @@ function memberState(m){
 async function bandsView(){
   const all=q(await sb.rpc('my_bands'))||[];
   const invites=all.filter(b=>b.my_status==='invited'), bands=all.filter(b=>b.my_status==='accepted');
+  const cands={};await Promise.all(bands.filter(b=>b.is_lead).map(async b=>{cands[b.id]=q(await sb.rpc('band_candidates',{p_band:b.id}))||[]}));
   const card=b=>{const waiting=b.members.filter(m=>!(m.status==='accepted')).length;
     return `<article class="card bandcard"><div class="bandhd"><div><h2>${esc(b.name)}</h2><div class="mut">Led by ${esc(b.lead_name)}</div></div>
       <span class="pill ${b.ready?'ok':'wait'}">${b.ready?'Ready to book':b.members.length<2?'Needs at least 2 members':`Waiting for ${waiting} member${waiting>1?'s':''}`}</span></div>
       <ul class="members">${b.members.map(m=>{const [k,t]=memberState(m);
         return `<li><span class="mname"><b>${esc(m.name||m.email)}</b>${m.instrument?` · ${esc(m.instrument)}`:''}${!m.has_account||m.name===m.email?'':`<span class="mut"> · ${esc(m.email)}</span>`}</span>
         <span class="acts"><span class="pill ${k}">${t}</span>
-        ${b.is_lead&&!m.has_account?`<a class="btnlink" href="${esc(inviteMail(b.name,m.email))}">Email invite</a>`:''}
+        ${b.is_lead&&m.status==='invited'?`<button class="alt" data-resend="${m.id}" data-email="${esc(m.email)}" data-bname="${esc(b.name)}" data-acct="${m.has_account?1:''}">Resend email</button>`:''}
         ${b.is_lead&&!m.is_lead?`<button class="bad" data-rmm="${m.id}" data-nm="${esc(m.name||m.email)}">Remove</button>`:''}</span></li>`}).join('')}</ul>
-      ${b.is_lead?`<form class="row inv" id="f-inv" data-band="${b.id}" data-bname="${esc(b.name)}"><label>Band-mate's school email<input name="email" type="email" required placeholder="name${SCHOOL_DOMAIN}"></label>
+      ${b.is_lead?`<h3 class="invh">Invite a band-mate</h3>
+        <form class="row inv" id="f-inv" data-band="${b.id}" data-bname="${esc(b.name)}">
+        <label>Choose a pupil<select name="user" required><option value="">${cands[b.id].length?'Select a pupil…':'No other pupils to choose yet'}</option>${cands[b.id].map(c=>`<option value="${c.id}">${esc(c.name)}${c.year?' · Year '+esc(c.year):''}</option>`).join('')}</select></label>
         <label>Their instrument<input name="inst" placeholder="e.g. Bass"></label><button>Invite</button></form>
+        <details class="notlisted"><summary>Not on the list?</summary>
+        <p class="mut">The list only shows pupils with an approved account. Enter their school email and they'll be sent an invitation to create an account and join ${esc(b.name)}.</p>
+        <form class="row inv" id="f-invmail" data-band="${b.id}" data-bname="${esc(b.name)}"><label>Their school email<input name="email" type="email" required placeholder="name${SCHOOL_DOMAIN}"></label>
+        <label>Their instrument<input name="inst" placeholder="e.g. Bass"></label><button>Send invitation</button></form></details>
         <p class="actsrow"><button class="bad" data-delband="${b.id}" data-nm="${esc(b.name)}">Delete band</button></p>`
       :`<p class="actsrow"><button class="alt" data-leave="${b.members.find(m=>m.status==='accepted'&&!m.is_lead&&m.email===String(me.email||'').toLowerCase())?.id||''}" data-nm="${esc(b.name)}">Leave band</button></p>`}
     </article>`};
@@ -436,7 +461,7 @@ async function bandsView(){
   ${bands.map(card).join('')}
   <div class="card"><h2>Start a band</h2><form id="f-band" class="row"><label>Band name<input name="name" required minlength="2" maxlength="40"></label>
    <label>Your instrument<input name="inst" placeholder="e.g. Guitar"></label><button>Create band</button></form>
-   <p class="mut">You'll be the leader. Then invite your band-mates by their school email.</p></div>`;
+   <p class="mut">You'll be the leader. Then choose your band-mates from the list, or invite them by school email if they don't have an account yet.</p></div>`;
 }
 async function staffBandsView(){
   const B=q(await sb.rpc('staff_bands'))||[];
@@ -461,7 +486,7 @@ document.addEventListener('submit',async e=>{
   e.preventDefault();const id=e.target.id,f=Object.fromEntries(new FormData(e.target));flash('');
   const btn=e.submitter||e.target.querySelector('button:not([type=button])'),label=btn?.textContent;
   if(btn?.disabled)return;
-  if(btn){btn.disabled=true;btn.textContent=({'f-login':'Logging in…','f-signup':'Creating account…','f-reg':'Sending…','f-ind':'Saving…','f-agr':'Signing…','f-book':'Booking…','f-band':'Creating…','f-inv':'Inviting…'})[id]||'Saving…'}
+  if(btn){btn.disabled=true;btn.textContent=({'f-login':'Logging in…','f-signup':'Creating account…','f-reg':'Sending…','f-ind':'Saving…','f-agr':'Signing…','f-book':'Booking…','f-band':'Creating…','f-inv':'Inviting…','f-invmail':'Sending…'})[id]||'Saving…'}
   try{
     if(id==='f-login'){q(await sb.auth.signInWithPassword({email:f.email,password:f.pw}));boot()}
     else if(id==='f-signup'){
@@ -486,10 +511,15 @@ document.addEventListener('submit',async e=>{
         seats:R==='computers'?+f.seats:1,purpose:R==='computers'?f.purpose.trim():null,band_id:f.band?+f.band:null}));
       sel=null;flash(f.band?'Booked for your band. It now shows in each member\'s bookings.':'Booked.');bookView()}
     else if(id==='f-band'){q(await sb.rpc('band_create',{p_name:f.name,p_instrument:f.inst||null}));flash(`Band "${f.name.trim()}" created. Now invite your band-mates.`);bandsView()}
-    else if(id==='f-inv'){const bandId=+e.target.dataset.band,bname=e.target.dataset.bname,email=f.email.trim().toLowerCase();
-      const r=q(await sb.rpc('band_invite',{p_band:bandId,p_email:email,p_instrument:f.inst||null}));
+    else if(id==='f-inv'||id==='f-invmail'){const bandId=+e.target.dataset.band,bname=e.target.dataset.bname;
+      const pick=id==='f-inv'?e.target.querySelector('select[name=user] option:checked'):null;
+      if(id==='f-inv'&&!f.user)throw new Error('Choose a pupil from the list.');
+      const r=id==='f-inv'?q(await sb.rpc('band_invite_user',{p_band:bandId,p_user:f.user,p_instrument:f.inst||null}))
+                         :q(await sb.rpc('band_invite',{p_band:bandId,p_email:f.email.trim().toLowerCase(),p_instrument:f.inst||null}));
+      const who=pick?pick.textContent.replace(/ · Year.*/,''):f.email.trim().toLowerCase();
+      const sent=await emailInvite(r.member_id,bname,id==='f-inv'?null:f.email.trim().toLowerCase(),r.has_account);
       await bandsView();
-      flash(!r.has_account?`Invited ${email}. They don't have an account yet: use "Email invite" to send them the link.`:!r.approved?`Invited ${email}. They can accept once staff approve their account.`:`Invited ${email}. They'll see the invitation in My bands.`)}
+      flash(`${who} has been invited to ${bname}. ${sent}${r.has_account&&!r.approved?' They can accept once staff approve their account.':''}`)}
     else if(id==='f-clo'){q(await sb.from('closures').insert({resource_id:f.r||null,closure_date:f.d,session:f.s||null,reason:f.why}));rulesView()}
     else if(id==='f-wk'){q(await sb.from('weekly_closures').insert({resource_id:f.r||null,weekday:+f.wd,session:f.s||null}));rulesView()}
   }catch(err){fail(err)}
@@ -507,6 +537,7 @@ document.addEventListener('click',async e=>{
     else if(d.cancel){if(confirm('Cancel this booking?')){q(await sb.from('bookings').delete().eq('id',d.cancel));flash('Booking cancelled.');shell()}}
     else if(d.appr){const[i,v]=d.appr.split('|');q(await sb.from('profiles').update({approved:v==='1',rejected:false}).eq('id',i));regsView()}
     else if(d.rej){q(await sb.from('profiles').update({rejected:true,approved:false}).eq('id',d.rej));regsView()}
+    else if(d.resend){b.disabled=true;flash(await emailInvite(+d.resend,d.bname,d.email,!!d.acct));b.disabled=false}
     else if(d.accept){q(await sb.rpc('band_respond',{p_band:+d.accept,p_accept:true}));flash('You\'ve joined the band.');bandsView()}
     else if(d.decline){if(confirm('Decline this band invitation?')){q(await sb.rpc('band_respond',{p_band:+d.decline,p_accept:false}));flash('Invitation declined.');bandsView()}}
     else if(d.rmm){if(confirm(`Remove ${d.nm} from the band?`)){q(await sb.rpc('band_remove',{p_member:+d.rmm}));flash(`${d.nm} removed.`);bandsView()}}
