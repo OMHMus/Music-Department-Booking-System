@@ -42,6 +42,7 @@ main.wrap{padding-block:22px 48px}
 /* Controls */
 button{background:var(--maroon);color:#fff;border:1.5px solid transparent;border-radius:999px;padding:.5rem 1.1rem;cursor:pointer;font-weight:600;font-size:14px}
 button:hover{background:var(--maroon-deep)}
+button:disabled{opacity:.6;cursor:progress}
 button.alt{background:var(--card);color:var(--ink);border-color:var(--line)}
 button.alt:hover{border-color:var(--gold);background:var(--soft)}
 button.bad{background:transparent;color:var(--bad);border-color:var(--bad)}
@@ -141,10 +142,14 @@ const SN={break:['Break','11:05–11:25'],lunch:['Lunch','12:25–13:15']};
 const schoolDay=d=>{d=new Date(d);while(d.getDay()===0||d.getDay()===6)d.setDate(d.getDate()+1);return d};
 let me=null, tab='book', sel=null, date=iso(schoolDay(new Date()));
 function iso(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
-function flash(t,bad){const m=$('#msg');m.textContent=t||'';m.className=t?(bad?'err':'ok'):''}
+function flash(t,bad){const m=$('#msg');m.textContent=t||'';m.className=t?(bad?'err':'ok'):'';if(t)m.scrollIntoView({block:'nearest',behavior:'smooth'})}
 const q=r=>{if(r.error)throw r.error;return r.data};
 // Turn database refusals into messages a pupil can act on
 const errText=e=>{const m=String(e?.message||e||''),c=e?.code;
+  if(e?.status===504||/timeout|deadline|Failed to fetch|NetworkError|AuthRetryableFetchError/i.test(m+' '+(e?.name||'')))return'The booking system is taking too long to respond. Please wait a minute and try again. If it keeps happening, tell the Music Department.';
+  if(/error sending confirmation|sending email/i.test(m))return'Your account could not be created because the confirmation email failed to send. Please tell the Music Department.';
+  if(/already registered/i.test(m))return'An account with this email already exists. Try logging in instead.';
+  if(/Invalid login credentials/i.test(m))return'That email or password is not right. Please check and try again.';
   if(c==='23505'&&/one_place_per_pupil/.test(m))return'You already have a booking in that session. Cancel it first if you want a different room.';
   if(c==='23505')return'Someone has just booked that slot. The timetable has been refreshed; please pick another.';
   if(c==='42501'||/row-level security/i.test(m))return'You can\'t do that yet. Your registration may still be waiting for staff approval.';
@@ -250,6 +255,9 @@ async function rulesView(){
 
 document.addEventListener('submit',async e=>{
   e.preventDefault();const id=e.target.id,f=Object.fromEntries(new FormData(e.target));flash('');
+  const btn=e.submitter||e.target.querySelector('button:not([type=button])'),label=btn?.textContent;
+  if(btn?.disabled)return;
+  if(btn){btn.disabled=true;btn.textContent=({'f-login':'Logging in…','f-signup':'Creating account…','f-reg':'Sending…','f-book':'Booking…'})[id]||'Saving…'}
   try{
     if(id==='f-login'){q(await sb.auth.signInWithPassword({email:f.email,password:f.pw}));boot()}
     else if(id==='f-signup'){
@@ -272,6 +280,7 @@ document.addEventListener('submit',async e=>{
     else if(id==='f-clo'){q(await sb.from('closures').insert({resource_id:f.r||null,closure_date:f.d,session:f.s||null,reason:f.why}));rulesView()}
     else if(id==='f-wk'){q(await sb.from('weekly_closures').insert({resource_id:f.r||null,weekday:+f.wd,session:f.s||null}));rulesView()}
   }catch(err){fail(err)}
+  finally{if(btn&&btn.isConnected){btn.disabled=false;btn.textContent=label}}
 });
 document.addEventListener('click',async e=>{
   const b=e.target.closest('button');if(!b)return;const d=b.dataset;flash('');
