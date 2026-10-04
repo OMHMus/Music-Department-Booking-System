@@ -1,7 +1,9 @@
 -- =====================================================================
 -- Bands made of individual, approved pupil accounts
 -- =====================================================================
--- STATUS: written 4 Oct 2026, NOT YET APPLIED to the live database.
+-- STATUS: applied to the live database on 4 Oct 2026 (via SQL Editor) and tested
+--         in rolled-back transactions with temporary pupils: invites, accept,
+--         ready check, band booking limits and clashes, permissions, delete.
 --
 -- Why: one pupil used to register a whole band, so only that pupil had
 -- agreed to the Practice Room Agreement. Now:
