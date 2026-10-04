@@ -97,6 +97,19 @@ h2{font-size:19px}h3{font-size:16px}
 .acts{display:flex;align-items:end;gap:10px;flex-wrap:wrap}
 .exam{flex-direction:row;align-items:center;gap:8px;font-size:12.5px}
 .exam select{padding:.4rem .6rem}
+.pill{display:inline-block;font-size:11.5px;font-weight:600;padding:3px 10px;border-radius:999px;white-space:nowrap}
+.pill.ok{background:var(--ok-bg);color:var(--ok-ink)}
+.pill.wait{background:var(--soft);color:var(--gold-ink)}
+.bandcard .bandhd{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:8px}
+.bandcard .bandhd h2{margin:0}
+.members{list-style:none;margin:0 0 14px;padding:0}
+.members li{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding:.6rem 0;border-bottom:1px solid var(--line)}
+.members .mname{min-width:0;flex:1 1 14rem;overflow-wrap:anywhere}
+.btnlink{display:inline-block;border:1.5px solid var(--gold);color:var(--acc-text);border-radius:999px;padding:.4rem .9rem;font-weight:600;font-size:13px;text-decoration:none}
+.btnlink:hover{background:var(--soft)}
+.inv{margin-top:4px}.actsrow{margin:14px 0 0}
+.invites{border-color:var(--gold)}
+.rule{flex-basis:100%;margin:2px 0 0}
 /* Rooms */
 .rooms{display:grid;gap:12px;margin-bottom:16px}
 .room{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,2fr);gap:12px 16px;align-items:center;box-shadow:var(--shadow)}
@@ -182,9 +195,10 @@ async function boot(){
 }
 function shell(){
   const tabs=[['book','Book'],['mine','My bookings']];
-  if(me.role==='staff')tabs.push(['regs','Registrations'],['all','All bookings'],['rules','Closures']);
+  if(me.role!=='staff')tabs.push(['bands','My bands']);
+  if(me.role==='staff')tabs.push(['regs','Registrations'],['sbands','Bands'],['all','All bookings'],['rules','Closures']);
   app.innerHTML=`<nav>${tabs.map(t=>`<button class="${t[0]===tab?'on':'alt'}" data-tab="${t[0]}">${t[1]}</button>`).join('')}</nav><div id="view"></div>`;
-  ({book:bookView,mine:mineView,regs:regsView,all:allView,rules:rulesView})[tab]().catch(fail);
+  ({book:bookView,mine:mineView,bands:bandsView,regs:regsView,sbands:staffBandsView,all:allView,rules:rulesView})[tab]().catch(fail);
 }
 function authView(){
   app.innerHTML=`<div class="auth"><div class="logo"><img src="assets/logo.png" alt="Sexey's School, established 1891"></div>
@@ -198,23 +212,21 @@ function regView(){
   app.innerHTML=`<div class="card"><h2>Register to use the practice rooms</h2><form id="f-reg">
   <p><label><span><input type="checkbox" name="ind" required> I have completed the Music Department induction</span></label></p>
   <p><label><span><input type="checkbox" name="agr" required> I agree to the Practice Room Agreement</span></label></p>
-  <div class="row"><label>Registering as<select name="type" id="rt"><option value="individual">Individual</option><option value="band">Band</option></select></label>
-  <label>Year group<input name="year" type="number" min="7" max="13" required></label><label>Your instrument(s)<input name="inst" required></label></div>
-  <div id="bandbox" hidden><div class="row"><label>Band name<input name="band"></label></div>
-  <p class="mut">Other members, one per line as: Name, Instrument. You are the lead pupil.</p><textarea name="members" rows="4" cols="40"></textarea></div>
+  <div class="row"><label>Year group<input name="year" type="number" min="7" max="13" required></label><label>Your instrument(s)<input name="inst" required></label></div>
+  <p class="mut">Everyone registers individually. Want to rehearse with others? Once you're approved, set up your band in <b>My bands</b> and invite your band-mates. Each of them needs their own account.</p>
   <p><button>Send registration</button></p></form></div>`;
 }
 async function bookView(){
   const v=$('#view'),wd=wdOf(date);
   const [res,wk,cl,sl,bands]=await Promise.all([sb.from('resources').select('*').order('sort'),sb.from('weekly_closures').select('*'),
-    sb.from('closures').select('*').eq('closure_date',date),sb.rpc('get_slots',{d1:date,d2:date}),sb.from('bands').select('id,name').eq('lead_id',me.id)]);
-  const R=q(res),W=q(wk),C=q(cl),S=q(sl),B=q(bands),max=new Date();max.setDate(max.getDate()+28);
+    sb.from('closures').select('*').eq('closure_date',date),sb.rpc('get_slots',{d1:date,d2:date}),me.role==='staff'?{data:[]}:sb.rpc('my_bands')]);
+  const R=q(res),W=q(wk),C=q(cl),S=q(sl),max=new Date();max.setDate(max.getDate()+28);
+  const B=(q(bands)||[]).filter(b=>b.my_status==='accepted'&&b.ready); // bands this pupil can book for
   const staff=me.role==='staff', mon=new Date(date+'T12:00');mon.setDate(mon.getDate()-(wdOf(date)-1));
   const sun=new Date(mon);sun.setDate(sun.getDate()+6);
-  const exam=!staff&&!!me.exam_course, lim=exam?EXAM_LIMIT:WEEKLY_LIMIT;
-  let usedN=0;if(!staff){let qq=sb.from('bookings').select('id',{count:'exact',head:true}).eq('user_id',me.id).gte('booking_date',iso(mon)).lte('booking_date',iso(sun));
-    if(exam)qq=qq.neq('resource_id','computers'); // exam pupils: computer bookings don't count
-    const r=await qq;if(r.error)throw r.error;usedN=r.count||0}
+  const exam=!staff&&!!me.exam_course;
+  // Counts own and band bookings, same rules as the database (practice_week_used)
+  let usedN=0,lim=exam?EXAM_LIMIT:WEEKLY_LIMIT;if(!staff){const u=q(await sb.rpc('my_week_usage',{p_date:date}));usedN=u.used;lim=u.limit}
   const full=!staff&&usedN>=lim;
   const shut=(r,s)=>{const w=W.find(w=>(!w.resource_id||w.resource_id===r.id)&&w.weekday===wd&&(!w.session||w.session===s));
     const c=C.find(c=>(!c.resource_id||c.resource_id===r.id)&&(!c.session||c.session===s));return w?'Closed':c?(c.reason||'Closed'):null};
@@ -239,28 +251,79 @@ async function bookView(){
   <div class="legend"><span><i class="sw free"></i>Free – tap to choose</span><span><i class="sw mine"></i>Yours or selected</span><span><i class="sw shut"></i>Booked or closed</span></div>
   ${sel?`<div class="card confirm"><div class="hd"><div class="eyebrow">Confirm booking</div><h3>${esc(R.find(r=>r.id===sel.r).name)} · ${nice} · ${SESS[sel.s]}</h3></div><form id="f-book" class="row">
    ${sel.r==='computers'?`<label>Places<input name="seats" type="number" min="1" max="16" value="1"></label><label>Purpose (required)<input name="purpose" required minlength="5" placeholder="e.g. GCSE composition coursework"></label>`:''}
-   ${B.length?`<label>Band (optional)<select name="band"><option value="">Just me</option>${B.map(b=>`<option value="${b.id}">${esc(b.name)}</option>`).join('')}</select></label>`:''}
-   <button>Confirm booking</button><button type="button" class="alt" data-unpick="1">Cancel</button></form></div>`:''}
+   ${sel.r!=='computers'&&B.length?`<label>Who is using the room?<select name="band"><option value="">Just me</option>${B.map(b=>`<option value="${b.id}">My band: ${esc(b.name)}</option>`).join('')}</select></label>`:''}
+   <button>Confirm booking</button><button type="button" class="alt" data-unpick="1">Cancel</button>
+   ${sel.r!=='computers'?`<p class="mut rule">A booking for just you means only you may use the room. To rehearse with others, book as a band${B.length?'. A band booking uses one session from each member\'s weekly allowance.':`. Set one up in <b>My bands</b>.`}</p>`:''}</form></div>`:''}
   <div class="rooms">${R.map(r=>`<article class="room"><div><h3>${esc(r.name)}</h3>${r.capacity>1?`<div class="cap">${r.capacity} places</div>`:''}</div>
    <div class="slots">${cell(r,'break')}${cell(r,'lunch')}</div></article>`).join('')}</div>`;
 }
 async function mineView(){
-  const D=q(await sb.from('bookings').select('*,resources(name)').eq('user_id',me.id).gte('booking_date',iso(new Date())).order('booking_date'));
-  $('#view').innerHTML=`<div class="card"><h2>My upcoming bookings</h2>${D.length?D.map(b=>`<div class="item"><span>${fd(b.booking_date)} · ${SESS[b.session]} · ${esc(b.resources.name)}${b.resource_id==='computers'?` (${b.seats} place${b.seats>1?'s':''}: ${esc(b.purpose)})`:''}</span><button class="bad" data-cancel="${b.id}">Cancel</button></div>`).join(''):'<p class="mut">Nothing booked yet.</p>'}</div>`;
+  const staff=me.role==='staff';
+  let qq=sb.from('bookings').select('*,resources(name)').gte('booking_date',iso(new Date())).order('booking_date').order('session');
+  if(staff)qq=qq.eq('user_id',me.id); // pupils: the database returns their own and their bands' bookings
+  const [D,bands]=await Promise.all([qq.then(q),staff?[]:sb.rpc('my_bands').then(q)]);
+  const bn=Object.fromEntries((bands||[]).map(b=>[b.id,b.name]));
+  $('#view').innerHTML=`<div class="card"><h2>My upcoming bookings</h2>${D.length?D.map(b=>`<div class="item"><span>${b.band_id?`<span class="badge">Band</span> `:''}${fd(b.booking_date)} · ${SESS[b.session]} · ${esc(b.resources.name)}${b.band_id?` · ${esc(bn[b.band_id]||'Band')}`:''}${b.resource_id==='computers'?` (${b.seats} place${b.seats>1?'s':''}: ${esc(b.purpose)})`:''}</span>
+    ${b.user_id===me.id?`<button class="bad" data-cancel="${b.id}">Cancel</button>`:'<span class="mut">Booked by a band-mate</span>'}</div>`).join(''):'<p class="mut">Nothing booked yet.</p>'}</div>`;
 }
 async function allView(){
   const D=q(await sb.from('bookings').select('*,resources(name),profiles(full_name),bands(name)').gte('booking_date',iso(new Date())).order('booking_date'));
   $('#view').innerHTML=`<div class="card"><h2>All upcoming bookings</h2>${D.length?D.map(b=>`<div class="item"><span>${fd(b.booking_date)} · ${SESS[b.session]} · ${esc(b.resources.name)} · ${esc(b.profiles?.full_name)}${b.bands?' ('+esc(b.bands.name)+')':''}${b.purpose?' · '+esc(b.purpose):''}</span><button class="bad" data-cancel="${b.id}">Cancel</button></div>`).join(''):'<p class="mut">No bookings.</p>'}</div>`;
 }
 async function regsView(){
-  const P=q(await sb.from('profiles').select('*,bands(name,band_members(member_name,instrument))').eq('role','pupil').eq('registered',true).order('created_at',{ascending:false}));
+  const P=q(await sb.from('profiles').select('*').eq('role','pupil').eq('registered',true).order('created_at',{ascending:false}));
   const examSel=p=>`<label class="exam">Exam course<select data-exam="${p.id}" aria-label="Exam course for ${esc(p.full_name)}"><option value="">None</option>${Object.entries(EXAM).map(([k,l])=>`<option value="${k}" ${p.exam_course===k?'selected':''}>${l}</option>`).join('')}</select></label>`;
-  const row=p=>`<div class="item"><span>${p.exam_course?`<span class="badge">${EXAM[p.exam_course]}</span> `:''}<b>${esc(p.full_name)}</b> · Y${p.year_group} · ${esc(p.instruments)} · ${p.reg_type}${p.bands?.length?' — '+p.bands.map(b=>esc(b.name)+': '+b.band_members.map(m=>esc(m.member_name)+' ('+esc(m.instrument)+')').join(', ')).join('; '):''}</span>
+  const row=p=>`<div class="item"><span>${p.exam_course?`<span class="badge">${EXAM[p.exam_course]}</span> `:''}<b>${esc(p.full_name)}</b> · Y${p.year_group} · ${esc(p.instruments)}</span>
    <span class="acts">${p.approved?`${examSel(p)}<button class="alt" data-appr="${p.id}|0">Revoke</button>`:`<button data-appr="${p.id}|1">Approve</button> <button class="bad" data-rej="${p.id}">Reject</button>`}</span></div>`;
   const pend=P.filter(p=>!p.approved&&!p.rejected),ok=P.filter(p=>p.approved),rej=P.filter(p=>p.rejected);
   $('#view').innerHTML=`<div class="card"><h2>Awaiting approval (${pend.length})</h2>${pend.map(row).join('')||'<p class="mut">None.</p>'}</div>
   <div class="card"><h2>Approved (${ok.length})</h2>${ok.map(row).join('')||'<p class="mut">None.</p>'}</div>
   <div class="card"><h2>Rejected (${rej.length})</h2>${rej.map(p=>row(p).replace(/<button data-rej.*?<\/button>/,'')).join('')||'<p class="mut">None.</p>'}</div>`;
+}
+// ----- Bands -----
+const SITE=location.origin+location.pathname;
+function inviteMail(band,email){
+  const sub=`Join my band "${band}" on the Sexey's practice room booking`;
+  const body=`Hi,\n\nI've added you to my band "${band}" on the Sexey's School Music Department practice room booking site, so we can book rooms to rehearse together.\n\n1. Go to ${SITE}\n2. Create an account with this school email address (${email})\n3. Complete the registration and wait for a member of staff to approve you\n4. Open "My bands" and accept the invitation\n\nThanks,\n${me.full_name}`;
+  return `mailto:${email}?subject=${encodeURIComponent(sub)}&body=${encodeURIComponent(body)}`;
+}
+function memberState(m){
+  if(m.is_lead)return['ok','Leader'];
+  if(m.status==='accepted')return['ok','Accepted'];
+  if(!m.has_account)return['wait','Invited · no account yet'];
+  if(!m.approved)return['wait','Invited · account awaiting approval'];
+  return['wait','Invited · needs to accept'];
+}
+async function bandsView(){
+  const all=q(await sb.rpc('my_bands'))||[];
+  const invites=all.filter(b=>b.my_status==='invited'), bands=all.filter(b=>b.my_status==='accepted');
+  const card=b=>{const waiting=b.members.filter(m=>!(m.status==='accepted')).length;
+    return `<article class="card bandcard"><div class="bandhd"><div><h2>${esc(b.name)}</h2><div class="mut">Led by ${esc(b.lead_name)}</div></div>
+      <span class="pill ${b.ready?'ok':'wait'}">${b.ready?'Ready to book':b.members.length<2?'Needs at least 2 members':`Waiting for ${waiting} member${waiting>1?'s':''}`}</span></div>
+      <ul class="members">${b.members.map(m=>{const [k,t]=memberState(m);
+        return `<li><span class="mname"><b>${esc(m.name||m.email)}</b>${m.instrument?` · ${esc(m.instrument)}`:''}${!m.has_account||m.name===m.email?'':`<span class="mut"> · ${esc(m.email)}</span>`}</span>
+        <span class="acts"><span class="pill ${k}">${t}</span>
+        ${b.is_lead&&!m.has_account?`<a class="btnlink" href="${esc(inviteMail(b.name,m.email))}">Email invite</a>`:''}
+        ${b.is_lead&&!m.is_lead?`<button class="bad" data-rmm="${m.id}" data-nm="${esc(m.name||m.email)}">Remove</button>`:''}</span></li>`}).join('')}</ul>
+      ${b.is_lead?`<form class="row inv" id="f-inv" data-band="${b.id}" data-bname="${esc(b.name)}"><label>Band-mate's school email<input name="email" type="email" required placeholder="name${SCHOOL_DOMAIN}"></label>
+        <label>Their instrument<input name="inst" placeholder="e.g. Bass"></label><button>Invite</button></form>
+        <p class="actsrow"><button class="bad" data-delband="${b.id}" data-nm="${esc(b.name)}">Delete band</button></p>`
+      :`<p class="actsrow"><button class="alt" data-leave="${b.members.find(m=>m.status==='accepted'&&!m.is_lead&&m.email===String(me.email||'').toLowerCase())?.id||''}" data-nm="${esc(b.name)}">Leave band</button></p>`}
+    </article>`};
+  $('#view').innerHTML=`<div class="card intro"><h2>Bands</h2><p>To rehearse with other people, book as a band. Every member needs their own approved account and must accept the invitation, so everyone has agreed to the Practice Room Agreement. A booking for just you means only you may use the room.</p></div>
+  ${invites.length?`<div class="card invites"><h2>Invitations</h2>${invites.map(b=>{const mine=b.members.find(m=>m.email===String(me.email||'').toLowerCase());
+    return `<div class="item"><span><b>${esc(b.lead_name)}</b> invited you to join <b>${esc(b.name)}</b>${mine?.instrument?` on ${esc(mine.instrument)}`:''}</span>
+    <span class="acts"><button data-accept="${b.id}">Accept</button><button class="alt" data-decline="${b.id}">Decline</button></span></div>`}).join('')}</div>`:''}
+  ${bands.map(card).join('')}
+  <div class="card"><h2>Start a band</h2><form id="f-band" class="row"><label>Band name<input name="name" required minlength="2" maxlength="40"></label>
+   <label>Your instrument<input name="inst" placeholder="e.g. Guitar"></label><button>Create band</button></form>
+   <p class="mut">You'll be the leader. Then invite your band-mates by their school email.</p></div>`;
+}
+async function staffBandsView(){
+  const B=q(await sb.rpc('staff_bands'))||[];
+  $('#view').innerHTML=`<div class="card"><h2>Bands (${B.length})</h2>${B.length?B.map(b=>`<div class="item"><span><b>${esc(b.name)}</b> · led by ${esc(b.lead_name)}
+    <span class="pill ${b.ready?'ok':'wait'}">${b.ready?'Ready':'Not ready'}</span><br><span class="mut">${(b.members||[]).map(m=>`${esc(m.name)}${m.instrument?' ('+esc(m.instrument)+')':''}${m.status==='accepted'?'':!m.has_account?' – no account yet':' – invited'}`).join(', ')}</span></span>
+    <button class="bad" data-delband="${b.id}" data-nm="${esc(b.name)}">Delete band</button></div>`).join(''):'<p class="mut">No bands yet. Pupils create them from their own My bands tab.</p>'}</div>`;
 }
 async function rulesView(){
   const [r,w,c]=await Promise.all([sb.from('resources').select('id,name').order('sort'),sb.from('weekly_closures').select('*').order('weekday'),sb.from('closures').select('*').order('closure_date')]);
@@ -279,7 +342,7 @@ document.addEventListener('submit',async e=>{
   e.preventDefault();const id=e.target.id,f=Object.fromEntries(new FormData(e.target));flash('');
   const btn=e.submitter||e.target.querySelector('button:not([type=button])'),label=btn?.textContent;
   if(btn?.disabled)return;
-  if(btn){btn.disabled=true;btn.textContent=({'f-login':'Logging in…','f-signup':'Creating account…','f-reg':'Sending…','f-book':'Booking…'})[id]||'Saving…'}
+  if(btn){btn.disabled=true;btn.textContent=({'f-login':'Logging in…','f-signup':'Creating account…','f-reg':'Sending…','f-book':'Booking…','f-band':'Creating…','f-inv':'Inviting…'})[id]||'Saving…'}
   try{
     if(id==='f-login'){q(await sb.auth.signInWithPassword({email:f.email,password:f.pw}));boot()}
     else if(id==='f-signup'){
@@ -287,18 +350,17 @@ document.addEventListener('submit',async e=>{
       const r=q(await sb.auth.signUp({email:f.email.trim(),password:f.pw,options:{data:{full_name:f.name.trim()}}}));
       if(r.session)boot();else flash('Account created. Check your email to confirm it, then log in.')}
     else if(id==='f-reg'){
-      let bandId=null;
-      if(f.type==='band'){if(!f.band?.trim())throw new Error('Enter a band name');
-        bandId=q(await sb.from('bands').insert({name:f.band.trim(),lead_id:me.id}).select().single()).id;
-        const ms=(f.members||'').split('\n').map(l=>l.split(',')).filter(a=>a[0].trim()).map(a=>({band_id:bandId,member_name:a[0].trim(),instrument:(a[1]||'').trim()}));
-        ms.push({band_id:bandId,member_name:me.full_name+' (lead)',instrument:f.inst});
-        q(await sb.from('band_members').insert(ms))}
-      q(await sb.from('profiles').update({registered:true,reg_type:f.type,year_group:+f.year,instruments:f.inst,induction_done:true,agreement_signed:true}).eq('id',me.id));
+      q(await sb.from('profiles').update({registered:true,reg_type:'individual',year_group:+f.year,instruments:f.inst,induction_done:true,agreement_signed:true}).eq('id',me.id));
       boot()}
     else if(id==='f-book'){
       const R=sel.r;q(await sb.from('bookings').insert({resource_id:R,booking_date:date,session:sel.s,user_id:me.id,
         seats:R==='computers'?+f.seats:1,purpose:R==='computers'?f.purpose.trim():null,band_id:f.band?+f.band:null}));
-      sel=null;flash('Booked.');bookView()}
+      sel=null;flash(f.band?'Booked for your band. It now shows in each member\'s bookings.':'Booked.');bookView()}
+    else if(id==='f-band'){q(await sb.rpc('band_create',{p_name:f.name,p_instrument:f.inst||null}));flash(`Band "${f.name.trim()}" created. Now invite your band-mates.`);bandsView()}
+    else if(id==='f-inv'){const bandId=+e.target.dataset.band,bname=e.target.dataset.bname,email=f.email.trim().toLowerCase();
+      const r=q(await sb.rpc('band_invite',{p_band:bandId,p_email:email,p_instrument:f.inst||null}));
+      await bandsView();
+      flash(!r.has_account?`Invited ${email}. They don't have an account yet: use "Email invite" to send them the link.`:!r.approved?`Invited ${email}. They can accept once staff approve their account.`:`Invited ${email}. They'll see the invitation in My bands.`)}
     else if(id==='f-clo'){q(await sb.from('closures').insert({resource_id:f.r||null,closure_date:f.d,session:f.s||null,reason:f.why}));rulesView()}
     else if(id==='f-wk'){q(await sb.from('weekly_closures').insert({resource_id:f.r||null,weekday:+f.wd,session:f.s||null}));rulesView()}
   }catch(err){fail(err)}
@@ -315,13 +377,17 @@ document.addEventListener('click',async e=>{
     else if(d.cancel){if(confirm('Cancel this booking?')){q(await sb.from('bookings').delete().eq('id',d.cancel));flash('Booking cancelled.');shell()}}
     else if(d.appr){const[i,v]=d.appr.split('|');q(await sb.from('profiles').update({approved:v==='1',rejected:false}).eq('id',i));regsView()}
     else if(d.rej){q(await sb.from('profiles').update({rejected:true,approved:false}).eq('id',d.rej));regsView()}
+    else if(d.accept){q(await sb.rpc('band_respond',{p_band:+d.accept,p_accept:true}));flash('You\'ve joined the band.');bandsView()}
+    else if(d.decline){if(confirm('Decline this band invitation?')){q(await sb.rpc('band_respond',{p_band:+d.decline,p_accept:false}));flash('Invitation declined.');bandsView()}}
+    else if(d.rmm){if(confirm(`Remove ${d.nm} from the band?`)){q(await sb.rpc('band_remove',{p_member:+d.rmm}));flash(`${d.nm} removed.`);bandsView()}}
+    else if(d.leave){if(confirm(`Leave ${d.nm}?`)){q(await sb.rpc('band_remove',{p_member:+d.leave}));flash(`You've left ${d.nm}.`);bandsView()}}
+    else if(d.delband){if(confirm(`Delete ${d.nm}? Its upcoming bookings will be cancelled.`)){q(await sb.rpc('band_delete',{p_band:+d.delband}));flash(`${d.nm} deleted.`);tab==='sbands'?staffBandsView():bandsView()}}
     else if(d.delc){q(await sb.from('closures').delete().eq('id',d.delc));rulesView()}
     else if(d.delw){q(await sb.from('weekly_closures').delete().eq('id',d.delw));rulesView()}
   }catch(err){fail(err)}
 });
 document.addEventListener('change',e=>{
   if(e.target.id==='d'){date=e.target.value||date;sel=null;bookView().catch(fail)}
-  if(e.target.id==='rt')$('#bandbox').hidden=e.target.value!=='band';
   if(e.target.dataset.exam){const el=e.target,v=el.value||null;el.disabled=true;flash('');
     sb.from('profiles').update({exam_course:v}).eq('id',el.dataset.exam).then(r=>{if(r.error)throw r.error;
       flash(v?`Marked as ${EXAM[v]}: 4 sessions a week and unlimited computer bookings.`:'Exam course removed: back to 3 sessions a week.');return regsView()}).catch(fail).finally(()=>{el.disabled=false})}
