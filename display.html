@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en-GB"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Practice Rooms Board</title>
+<link rel="icon" type="image/png" href="assets/favicon.png">
+<meta name="theme-color" content="#8B292B">
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Montserrat:wght@400;500;600;700;800&display=swap">
+<style>
+/* Foyer TV board. Same Sexey's palette as index.html: maroon #8B292B, gold #C8A877, Cinzel + Montserrat.
+   Laid out on a fixed 1920x1080 stage that is scaled to fit any TV (720p, 1080p, 4K). */
+:root{
+  --maroon:#8B292B;--maroon-deep:#6E1F21;--maroon-ink:#4A1416;--gold:#C8A877;--gold-lt:#E9D6B3;--gold-ink:#86672F;
+  --bg:#F6F3EF;--card:#FFFFFF;--ink:#2B1B1C;--mut:#6F5E5D;--line:#E4DAD1;--shut:#EEE8E2;--shut-ink:#857774;
+  --ok:#25573A;--ok-bg:#E3F1E7;
+  --f-display:"Cinzel","Trajan Pro",Georgia,serif;--f-ui:"Montserrat","Gotham","Helvetica Neue",Arial,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden;background:var(--maroon-ink);cursor:none}
+body{font-family:var(--f-ui);color:var(--ink);-webkit-font-smoothing:antialiased}
+#stage{position:absolute;left:50%;top:50%;width:1920px;height:1080px;transform-origin:center;background:var(--bg);
+  display:grid;grid-template-rows:auto auto 1fr auto;overflow:hidden;transition:filter 2s}
+#stage.night{filter:brightness(.45)}
+
+/* Header */
+header{background:linear-gradient(180deg,var(--maroon),var(--maroon-deep));color:#fff;display:grid;grid-template-columns:auto 1fr auto;
+  align-items:center;gap:40px;padding:20px 56px 18px;border-bottom:6px solid var(--gold);position:relative}
+header::after{content:"";position:absolute;inset:auto 0 -12px;height:6px;background:var(--maroon-deep)}
+.lock{display:flex;align-items:center;gap:26px}
+.lock img{height:108px;width:auto;filter:drop-shadow(0 4px 10px rgba(0,0,0,.25))}
+.lock .wm{display:flex;flex-direction:column;line-height:1}
+.lock .wm b{font-family:var(--f-display);font-weight:600;font-size:54px;letter-spacing:.06em}
+.lock .wm span{font-size:21px;letter-spacing:.42em;color:var(--gold);font-weight:500;margin-top:10px}
+.title{text-align:center}
+.title .eb{font-size:20px;letter-spacing:.32em;text-transform:uppercase;color:var(--gold-lt);font-weight:600}
+.title h1{font-family:var(--f-display);font-weight:600;font-size:66px;margin:4px 0 0;letter-spacing:.04em}
+.clock{text-align:right;font-variant-numeric:tabular-nums}
+.clock .t{font-size:84px;font-weight:700;line-height:1;letter-spacing:-.01em}
+.clock .d{font-size:24px;color:var(--gold-lt);font-weight:600;margin-top:8px;letter-spacing:.04em}
+
+/* Status strip */
+.strip{display:flex;align-items:center;gap:28px;padding:26px 56px 12px;font-size:30px;font-weight:600}
+.pill{display:inline-flex;align-items:center;gap:12px;background:var(--maroon);color:#fff;border-radius:999px;padding:10px 26px;font-size:24px;
+  letter-spacing:.14em;text-transform:uppercase;font-weight:700;white-space:nowrap}
+.pill.gold{background:var(--gold);color:var(--maroon-ink)}
+.pill .dot{width:14px;height:14px;border-radius:50%;background:#fff;animation:pulse 2s infinite}
+@keyframes pulse{50%{opacity:.25}}
+.strip .msg{flex:1;color:var(--ink)}
+.strip .msg em{font-style:normal;color:var(--maroon)}
+.strip .free{color:var(--ok);font-weight:700;white-space:nowrap}
+.strip .free.none{color:var(--maroon)}
+
+/* Board */
+.board{padding:6px 56px 0;display:grid;grid-template-columns:390px 1fr 1fr;grid-template-rows:auto;grid-auto-rows:minmax(0,1fr);gap:10px 22px;min-height:0;overflow:hidden}
+.colh{display:flex;align-items:baseline;gap:16px;padding:0 6px 2px;border-bottom:4px solid var(--line);align-self:end}
+.colh b{font-family:var(--f-display);font-size:38px;font-weight:700;color:var(--maroon)}
+.colh>span{font-size:26px;color:var(--mut);font-weight:600;font-variant-numeric:tabular-nums}
+.colh i{margin-left:auto;font-style:normal}
+.colh.on{border-color:var(--gold)}
+.colh.past{opacity:.45}
+.board .hdr0{align-self:end;font-size:20px;letter-spacing:.24em;text-transform:uppercase;color:var(--gold-ink);font-weight:700;padding-bottom:12px}
+.room{display:flex;flex-direction:column;justify-content:center;padding-left:6px;border-left:8px solid var(--gold)}
+.room b{font-family:var(--f-display);font-size:34px;font-weight:700;color:var(--maroon-ink);line-height:1.05;padding-left:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.room span{font-size:16px;letter-spacing:.18em;text-transform:uppercase;color:var(--gold-ink);font-weight:700;padding:6px 0 0 18px}
+
+.cell{border-radius:16px;display:flex;align-items:center;gap:18px;padding:0 28px;min-width:0;position:relative;overflow:hidden}
+.cell.booked{background:linear-gradient(180deg,var(--maroon),var(--maroon-deep));color:#fff;box-shadow:0 6px 18px rgba(110,31,33,.22)}
+.cell.free{background:var(--card);border:3px dashed var(--gold);color:var(--gold-ink)}
+.cell.closed{background:repeating-linear-gradient(135deg,var(--shut) 0 18px,#E7E0D9 18px 36px);color:var(--shut-ink)}
+.cell.past{opacity:.38;filter:saturate(.4)}
+.cell.on{outline:6px solid var(--gold);outline-offset:3px}
+.cell .nm{font-size:44px;font-weight:800;letter-spacing:-.005em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.cell .yr{flex:none;background:rgba(255,255,255,.16);border:2px solid rgba(233,214,179,.6);color:var(--gold-lt);border-radius:999px;
+  font-size:22px;font-weight:700;padding:4px 14px;letter-spacing:.06em}
+.cell .ic{flex:none;width:44px;height:44px;color:var(--gold)}
+.cell.free .lbl{font-size:36px;font-weight:700;text-transform:uppercase;letter-spacing:.12em}
+.cell.closed .lbl{font-size:30px;font-weight:700;text-transform:uppercase;letter-spacing:.14em}
+.cell .sub{font-size:22px;font-weight:600;opacity:.9;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.cell.free .sub{color:var(--mut)}
+/* Computers: seat meter */
+.cell.pc{flex-direction:column;align-items:stretch;justify-content:center;gap:6px;padding:0 26px}
+.cell.pc .top{display:flex;align-items:baseline;gap:14px}
+.cell.pc .n{font-size:38px;line-height:1.1;font-weight:800;font-variant-numeric:tabular-nums}
+.cell.pc .of{font-size:24px;font-weight:600;opacity:.85}
+.seats{display:flex;gap:6px}
+.seats i{flex:1;height:12px;border-radius:4px;background:var(--line)}
+.seats i.u{background:var(--maroon)}
+.cell.pc.full .seats i.u,.cell.pc.busy .seats i.u{background:var(--gold)}
+.cell.pc.busy .seats i,.cell.pc.full .seats i{background:rgba(255,255,255,.18)}
+
+/* Footer */
+footer{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:36px;padding:16px 56px 18px;margin-top:16px;background:#fff;border-top:4px solid var(--gold)}
+.qr{display:flex;align-items:center;gap:24px}
+.qr #qr{width:112px;height:112px;background:#fff;padding:6px;border:3px solid var(--maroon);border-radius:12px}
+.qr #qr svg{width:100%;height:100%;display:block}
+.qr b{display:block;font-family:var(--f-display);font-size:34px;color:var(--maroon);font-weight:700}
+.qr span{font-size:22px;color:var(--mut);font-weight:600}
+.legend{display:flex;justify-content:center;gap:38px;font-size:22px;font-weight:600;color:var(--mut)}
+.legend i{display:inline-block;width:30px;height:22px;border-radius:6px;vertical-align:-4px;margin-right:10px}
+.lg-b{background:var(--maroon)}.lg-f{border:3px dashed var(--gold);background:#fff}.lg-c{background:repeating-linear-gradient(135deg,var(--shut) 0 5px,#DCD3CB 5px 10px)}
+.upd{text-align:right;font-size:20px;color:var(--mut);font-weight:600;font-variant-numeric:tabular-nums}
+.upd .s{display:inline-block;width:14px;height:14px;border-radius:50%;background:#2E8B57;margin-right:10px;vertical-align:-1px}
+.upd.stale .s{background:#C7463C;animation:pulse 1.2s infinite}
+.upd.stale{color:#A3271F}
+
+/* Full-screen notices (setup / errors) */
+.notice{grid-row:2/4;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:20px;padding:60px}
+.notice h2{font-family:var(--f-display);font-size:56px;color:var(--maroon);margin:0}
+.notice p{font-size:30px;color:var(--mut);max-width:1300px;margin:0;line-height:1.45}
+.notice code{background:var(--shut);padding:2px 12px;border-radius:8px;color:var(--ink);font-size:26px}
+.hide{display:none!important}
+</style>
+</head>
+<body>
+<div id="stage">
+  <header>
+    <div class="lock"><img src="assets/crest.png" alt=""><div class="wm"><b>SEXEY’S</b><span>SCHOOL</span></div></div>
+    <div class="title"><div class="eb">Music Department</div><h1>Practice Rooms</h1></div>
+    <div class="clock"><div class="t" id="time">--:--</div><div class="d" id="date"></div></div>
+  </header>
+  <div class="strip" id="strip"></div>
+  <main class="board" id="board"></main>
+  <footer>
+    <div class="qr"><div id="qr"></div><div><b>Book a room</b><span id="bookurl"></span></div></div>
+    <div class="legend"><span><i class="lg-b"></i>Booked</span><span><i class="lg-f"></i>Free to book</span><span><i class="lg-c"></i>Closed</span></div>
+    <div class="upd" id="upd"><span class="s"></span>Connecting…</div>
+  </footer>
+</div>
+
+<script src="assets/vendor/qrcode.js"></script>
+<script>
+// ---------------------------------------------------------------------------
+// Live data: Supabase function display_board() (supabase/migrations/20261004_foyer_display.sql).
+// The screen key is NOT in this file (the repo is public). Open the board as
+//   display.html?key=<screen key>
+// Optional URL settings:  &refresh=30 (seconds)  &book=<booking site URL>  &night=0 (no dimming)  &demo=1 (sample data)
+// Publishable (anon) key only, same as index.html. Never put a secret/service-role key here.
+// ---------------------------------------------------------------------------
+const SB_URL='https://cukylemtaiogtfnwuwgq.supabase.co', SB_KEY='sb_publishable_u0vyX_4O8UIEHhSm-f3wmg_oT8bNymk';
+// Session times: must match SN in index.html and practice_check_booking in the migrations.
+const SESS=[{id:'break',name:'Break',from:'11:05',to:'11:25'},{id:'lunch',name:'Lunch',from:'12:25',to:'13:15'}];
+const P=new URLSearchParams(location.search);
+const KEY=P.get('key')||'', DEMO=P.get('demo')==='1';
+const REFRESH=Math.max(15,+P.get('refresh')||30)*1000;
+const BOOK_URL=P.get('book')||new URL('./',location.href).href;
+const NIGHT=P.get('night')!=='0';
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+// ---- London time, whatever the TV's own clock zone is set to
+function london(){
+  const p=Object.fromEntries(new Intl.DateTimeFormat('en-GB',{timeZone:'Europe/London',year:'numeric',month:'2-digit',day:'2-digit',
+    hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false,weekday:'short'}).formatToParts(new Date()).map(x=>[x.type,x.value]));
+  const h=+p.hour%24;
+  return {date:`${p.year}-${p.month}-${p.day}`,mins:h*60+ +p.minute,hm:`${String(h).padStart(2,'0')}:${p.minute}`,dow:['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].indexOf(p.weekday)+1};
+}
+const toMin=t=>{const [h,m]=t.split(':');return h*60+ +m};
+const addDays=(iso,n)=>{const d=new Date(iso+'T12:00:00Z');d.setUTCDate(d.getUTCDate()+n);return d.toISOString().slice(0,10)};
+const dowOf=iso=>(new Date(iso+'T12:00:00Z').getUTCDay()+6)%7+1;
+const longDate=iso=>new Date(iso+'T12:00:00Z').toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',timeZone:'UTC'});
+
+// Which day to show: today until lunch ends, otherwise the next school day.
+function targetDay(){
+  const n=london(); let d=n.date;
+  if(n.dow>5||n.mins>=toMin(SESS[SESS.length-1].to)) d=addDays(d,1);
+  while(dowOf(d)>5) d=addDays(d,1);
+  return d;
+}
+// State of each session on the day shown: past / now / next / later
+function sessionStates(day){
+  const n=london(), isToday=day===n.date, out={}; let nextSet=false;
+  for(const s of SESS){
+    let st='later';
+    if(isToday&&n.mins>=toMin(s.to)) st='past';
+    else if(isToday&&n.mins>=toMin(s.from)) st='now';
+    else if(!nextSet){st='next';}
+    if(st==='now'||st==='next') nextSet=true;
+    out[s.id]=st;
+  }
+  return out;
+}
+
+// ---- Data
+let data=null, lastOk=0, fails=0, timer=null;
+async function load(){
+  const day=targetDay();
+  try{
+    if(DEMO){data=demo(day);}
+    else{
+      const r=await fetch(SB_URL+'/rest/v1/rpc/display_board',{method:'POST',cache:'no-store',
+        headers:{apikey:SB_KEY,'Content-Type':'application/json'},body:JSON.stringify({p_key:KEY,p_date:day})});
+      const j=await r.json().catch(()=>null);
+      if(!r.ok){const e=new Error(j?.message||('HTTP '+r.status));e.code=j?.code;throw e}
+      data=j;
+    }
+    lastOk=Date.now(); fails=0; render();
+  }catch(e){
+    fails++;
+    if(e.code==='28000') return notice('This screen isn’t authorised','The screen key in the address is missing or has been revoked. Ask the Music Department to set the board up again.');
+    if(e.code==='PGRST202') return notice('Board not installed yet','The display_board function hasn’t been added to the booking database. Run <code>supabase/migrations/20261004_foyer_display.sql</code>.');
+    if(!data) $('#upd').innerHTML='<span class="s"></span>Can’t reach the booking system. Retrying…';
+    staleCheck();
+  }finally{
+    clearTimeout(timer);
+    timer=setTimeout(load,fails?Math.min(REFRESH*2**Math.min(fails,4),5*60e3):REFRESH);
+  }
+}
+
+// ---- Render
+function render(){
+  if(!data) return;
+  const day=data.date, st=sessionStates(day), n=london(), today=day===n.date;
+  const slot=(r,s)=>data.slots.find(x=>x.resource_id===r&&x.session===s)||{closed:false,who:[],seats:0};
+  const rooms=data.resources;
+  const on=SESS.find(s=>st[s.id]==='now'), nx=SESS.find(s=>st[s.id]==='next');
+  const focus=on||nx;
+
+  // Status strip
+  let pill, msg;
+  if(on){pill=`<span class="pill"><span class="dot"></span>Now · ${on.name}</span>`;msg=`${on.name} until <em>${on.to}</em>`}
+  else if(today&&nx){const m=toMin(nx.from)-n.mins;pill=`<span class="pill gold">Next · ${nx.name}</span>`;
+    msg=`${nx.name} starts at <em>${nx.from}</em> · ${m>=60?Math.floor(m/60)+' hr '+(m%60)+' min':m+' min'} to go`}
+  else{pill=`<span class="pill gold">Coming up</span>`;msg=`Showing <em>${longDate(day)}</em>`}
+  let free='';
+  if(focus){const f=rooms.filter(r=>r.capacity===1).filter(r=>{const x=slot(r.id,focus.id);return!x.closed&&!x.who.length}).length;
+    free=f?`<span class="free">${f} room${f===1?'':'s'} free at ${focus.name.toLowerCase()}</span>`:`<span class="free none">All rooms taken at ${focus.name.toLowerCase()}</span>`}
+  $('#strip').innerHTML=pill+`<span class="msg">${msg}</span>`+free;
+
+  // Board
+  const icNote='<svg class="ic" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M9 3v10.6A3.5 3.5 0 1 0 11 17V7h8V3z"/></svg>';
+  let h=`<div class="hdr0">${today?'Today':'Rooms'}</div>`;
+  for(const s of SESS){const x=st[s.id];
+    h+=`<div class="colh ${x==='now'||(x==='next'&&!on)?'on':''} ${x==='past'?'past':''}"><b>${s.name}</b><span>${s.from}–${s.to}</span>`+
+      `<i>${x==='now'?'<span class="pill"><span class="dot"></span>Now</span>':x==='next'&&!on?'<span class="pill gold">Next</span>':x==='past'?'<span class="pill gold" style="opacity:.8">Finished</span>':''}</i></div>`}
+  for(const r of rooms){
+    const pc=r.capacity>1;
+    h+=`<div class="room"><b>${esc(r.name.replace(/\s*\(\d+\)$/,''))}</b><span>${pc?r.capacity+' seats':'Practice space'}</span></div>`;
+    for(const s of SESS){
+      const x=slot(r.id,s.id), sx=st[s.id], cls=(sx==='past'?' past':'')+((sx==='now')||(sx==='next'&&!on)?' on':'');
+      if(x.closed){h+=`<div class="cell closed${cls}"><span class="lbl">Closed</span>${x.reason?`<span class="sub">${esc(x.reason)}</span>`:''}</div>`;continue}
+      if(pc){
+        const used=Math.min(x.seats||0,r.capacity), left=r.capacity-used, names=x.who.map(w=>w.name);
+        const shown=names.slice(0,3).join(', ')+(names.length>3?` +${names.length-3}`:'');
+        h+=`<div class="cell pc ${used?(left?'busy booked':'full booked'):'free'}${cls}"><div class="top">`+
+          (left?`<span class="n">${left}</span><span class="of">of ${r.capacity} free</span>`:`<span class="n">Full</span>`)+
+          (used?`<span class="sub" style="margin-left:auto">${esc(shown)}</span>`:'')+
+          `</div><div class="seats">${Array.from({length:r.capacity},(_,i)=>`<i class="${i<used?'u':''}"></i>`).join('')}</div></div>`;
+        continue;
+      }
+      if(!x.who.length){h+=`<div class="cell free${cls}"><span class="lbl">Free</span>${sx==='past'?'':'<span class="sub">Book online</span>'}</div>`;continue}
+      const w=x.who[0];
+      h+=`<div class="cell booked${cls}">${w.band?icNote:''}<span class="nm">${esc(w.name)}</span>`+
+        (w.band?'<span class="yr">Band</span>':w.staff?'<span class="yr">Staff</span>':w.year?`<span class="yr">Y${esc(w.year)}</span>`:'')+`</div>`;
+    }
+  }
+  $('#board').innerHTML=h;
+  staleCheck();
+}
+
+function staleCheck(){
+  const u=$('#upd'); if(!lastOk) return;
+  const age=Date.now()-lastOk, t=new Date(lastOk).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',timeZone:'Europe/London'});
+  const stale=age>Math.max(3*REFRESH,120e3);
+  u.className='upd'+(stale?' stale':'');
+  u.innerHTML=`<span class="s"></span>`+(stale?`Offline · showing ${t}`:`Live · updated ${t}`);
+}
+
+function notice(title,text){
+  $('#strip').classList.add('hide'); $('#board').outerHTML=`<main class="notice" id="board"><h2>${title}</h2><p>${text}</p></main>`;
+  $('#upd').innerHTML='<span class="s"></span>Not connected'; $('#upd').className='upd stale';
+}
+
+// ---- Clock, re-renders on minute change so Now/Next flip on time
+let lastMin=-1;
+function tick(){
+  const n=london();
+  $('#time').textContent=n.hm;
+  $('#date').textContent=longDate(n.date);
+  if(n.mins!==lastMin){
+    lastMin=n.mins;
+    if(data&&data.date!==targetDay()) load(); else render();
+    $('#stage').classList.toggle('night',NIGHT&&(n.dow>5||n.mins<toMin('07:30')||n.mins>=toMin('17:30')));
+    if(n.hm==='03:00') location.reload();        // daily fresh start: picks up code changes, clears memory
+  }
+}
+
+// ---- Fit the 1920x1080 stage to the screen, with a tiny drift to protect against screen burn-in
+let drift=0;
+function fit(){
+  const s=Math.min(innerWidth/1920,innerHeight/1080), dx=[0,2,0,-2][drift%4], dy=[0,0,2,0][drift%4];
+  $('#stage').style.transform=`translate(calc(-50% + ${dx}px),calc(-50% + ${dy}px)) scale(${s})`;
+}
+addEventListener('resize',fit); setInterval(()=>{drift++;fit()},5*60e3);
+
+// ---- Keep the screen awake and recover after the TV/browser was asleep or offline
+async function wake(){try{await navigator.wakeLock?.request('screen')}catch(e){}}
+document.addEventListener('visibilitychange',()=>{if(!document.hidden){wake();load()}});
+addEventListener('online',load);
+setInterval(()=>{if(lastOk&&Date.now()-lastOk>30*60e3) location.reload()},60e3); // stuck for 30 min: start again
+
+// ---- Booking link + QR code
+$('#bookurl').textContent=BOOK_URL.replace(/^https?:\/\//,'').replace(/\/$/,'');
+try{const q=qrcode(0,'M');q.addData(BOOK_URL);q.make();$('#qr').innerHTML=q.createSvgTag({cellSize:4,margin:0,scalable:true})}catch(e){$('#qr').classList.add('hide')}
+
+// ---- Sample data for previewing (display.html?demo=1)
+function demo(day){
+  const res=[['classroom','Music Classroom',1],['pr1','PR1',1],['pr2','PR2',1],['pr3','PR3',1],['studio','Studio',1],['ensemble','Ensemble Room',1],['computers','Computers (16)',16]]
+    .map(([id,name,capacity])=>({id,name,capacity}));
+  const b=(n,y,o={})=>({name:n,year:y,band:false,staff:false,seats:1,...o});
+  const S={'classroom|break':[b('Amelia T.',10)],'pr1|break':[b('Oliver P.',12)],'pr2|break':[],'studio|break':[b('The Midnight Owls',null,{band:true})],
+    'ensemble|break':[b('Year 9 Choir rehearsal',null,{staff:true})],'computers|break':[b('Freya M.',11),b('Harry W.',11),b('Isla K.',13),b('Noah B.',10),b('Ruby S.',11)],
+    'classroom|lunch':[b('Jacob H.',9)],'pr1|lunch':[b('Sophie L.',11)],'pr2|lunch':[b('Ethan R.',13)],'pr3|lunch':[b('Grace D.',8)],'studio|lunch':[b('Static Bloom',null,{band:true})],
+    'computers|lunch':Array.from({length:12},(_,i)=>b(['Leo','Mia','Zara','Alfie','Evie','Max','Lily','Theo','Ava','Finn','Poppy','Jack'][i]+' A.',10+i%4))};
+  const closed={'pr3|break':'Peripatetic lesson','ensemble|lunch':'Orchestra rehearsal'};
+  const slots=[];for(const r of res)for(const s of ['break','lunch']){const k=r.id+'|'+s,w=S[k]||[];
+    slots.push({resource_id:r.id,session:s,closed:!!closed[k],reason:closed[k]||null,seats:w.reduce((a,x)=>a+x.seats,0),who:closed[k]?[]:w})}
+  return {date:day,resources:res,slots};
+}
+
+// ---- Start
+fit(); tick(); setInterval(tick,1000); wake();
+if(!KEY&&!DEMO) notice('Screen key needed','Open this board with its screen key, e.g. <code>display.html?key=…</code>. Staff can create a key in Supabase (see the notes at the top of <code>supabase/migrations/20261004_foyer_display.sql</code>).');
+else load();
+</script>
+</body></html>
