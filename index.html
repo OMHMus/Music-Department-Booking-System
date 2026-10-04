@@ -1,27 +1,131 @@
 <!DOCTYPE html>
 <html lang="en-GB"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Music Practice Rooms</title>
+<title>Sexey's Practice Rooms</title>
+<link rel="icon" type="image/png" href="assets/favicon.png">
+<meta name="theme-color" content="#8B292B">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600&family=Montserrat:wght@400;500;600;700&display=swap">
 <style>
-:root{--bg:#eef1f6;--ink:#1d2433;--mut:#5b6478;--acc:#0f766e;--bad:#b42318;--card:#fff;--line:#d5dae4;--mine:#c7e9e4;--shut:#e4e6ec}
-*{box-sizing:border-box}body{margin:0;font:16px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--bg);color:var(--ink)}
-header{background:var(--ink);color:#fff;padding:.7rem 1rem;display:flex;gap:1rem;align-items:center;flex-wrap:wrap}
-header h1{font-size:1.1rem;margin:0;flex:1}main{max-width:62rem;margin:0 auto;padding:1rem}
-nav{display:flex;gap:.4rem;flex-wrap:wrap;margin-bottom:1rem}
-button,input,select,textarea{font:inherit}
-button{background:var(--acc);color:#fff;border:0;border-radius:6px;padding:.45rem .9rem;cursor:pointer}
-button.alt{background:#fff;color:var(--ink);border:1px solid var(--line)}button.on{background:var(--ink);color:#fff}
-button.bad{background:var(--bad)}button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #f59e0b;outline-offset:1px}
-input,select,textarea{padding:.4rem .5rem;border:1px solid var(--line);border-radius:6px;background:#fff;max-width:100%}
-.card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:1rem;margin-bottom:1rem}
-.row{display:flex;gap:.6rem;flex-wrap:wrap;align-items:end}label{display:flex;flex-direction:column;font-size:.9rem;gap:.2rem}
-.scroll{overflow-x:auto}table{border-collapse:collapse;width:100%}th,td{border:1px solid var(--line);padding:.4rem;text-align:center;font-size:.9rem}
-td button{width:100%;background:#fff;color:var(--acc);border:1px solid var(--acc)}td.mine{background:var(--mine)}td.shut,td.full{background:var(--shut);color:var(--mut)}
-td.sel button{background:var(--acc);color:#fff}
-#msg{padding:.6rem 1rem;border-radius:6px;margin-bottom:1rem;display:none}#msg.ok{display:block;background:#d9f2e6}#msg.err{display:block;background:#fde4e1;color:var(--bad)}
-.mut{color:var(--mut);font-size:.9rem}li{margin:.3rem 0}.item{display:flex;gap:.6rem;justify-content:space-between;align-items:center;flex-wrap:wrap;padding:.5rem 0;border-bottom:1px solid var(--line)}
+/* Sexey's School branding: maroon #8B292B and gold #C8A877, Cinzel headings (close to the wordmark), Montserrat UI. */
+:root{
+  --bg:#F6F3EF;--card:#FFFFFF;--ink:#2B1B1C;--mut:#6F5E5D;--line:#E4DAD1;
+  --maroon:#8B292B;--maroon-deep:#6E1F21;--gold:#C8A877;--gold-ink:#86672F;--acc-text:#8B292B;
+  --shut:#EEE8E2;--shut-ink:#857774;--soft:#F4ECDD;--ok-bg:#E3F1E7;--ok-ink:#25573A;--bad:#A3271F;--bad-bg:#FBE5E2;
+  --paper:#FFFFFF;--shadow:0 1px 2px rgba(60,20,20,.06),0 6px 20px rgba(60,20,20,.06);
+  --f-display:"Cinzel","Trajan Pro",Georgia,serif;--f-ui:"Montserrat","Gotham","Helvetica Neue",Arial,sans-serif;
+  color-scheme:light}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#170F10;--card:#221819;--ink:#F2EAE4;--mut:#B5A5A1;--line:#3A2B2C;--gold-ink:#D9BE8C;--acc-text:#E6A79F;
+  --shut:#2C2122;--shut-ink:#9C8B88;--soft:#33291C;--ok-bg:#1E3527;--ok-ink:#9AD8B0;--bad:#C7463C;--bad-bg:#3A1C1A;
+  --shadow:0 1px 2px rgba(0,0,0,.4);color-scheme:dark}}
+*{box-sizing:border-box}
+body{margin:0;font:15px/1.5 var(--f-ui);background:var(--bg);color:var(--ink)}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.wrap{max-width:66rem;margin:0 auto;padding-inline:16px}
+
+/* Brand bar + maroon band */
+.brand{background:var(--paper);border-bottom:3px solid var(--gold)}
+.brand .wrap{display:flex;align-items:center;justify-content:space-between;gap:12px 16px;padding-block:12px;flex-wrap:wrap}
+.lockup{display:flex;align-items:center;gap:14px;text-decoration:none}
+.lockup .crest{height:58px;width:auto}.lockup .wm{height:42px;width:auto}
+.acct{display:flex;align-items:center;gap:10px;flex-wrap:wrap;color:#2B1B1C;font-size:14px}
+.acct #who{font-weight:600}
+.acct button{background:#fff;color:#8B292B;border:1.5px solid #C8A877}
+.acct button:hover{background:#F4ECDD}
+.band{background:linear-gradient(180deg,var(--maroon),var(--maroon-deep));color:#fff}
+.band .wrap{padding-block:20px}
+.band .eyebrow{font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;color:#E9D6B3;font-weight:600}
+.band h1{font-family:var(--f-display);font-weight:600;font-size:clamp(24px,4vw,32px);margin:2px 0 0;letter-spacing:.02em;text-wrap:balance}
+main.wrap{padding-block:22px 48px}
+
+/* Controls */
+button{background:var(--maroon);color:#fff;border:1.5px solid transparent;border-radius:999px;padding:.5rem 1.1rem;cursor:pointer;font-weight:600;font-size:14px}
+button:hover{background:var(--maroon-deep)}
+button.alt{background:var(--card);color:var(--ink);border-color:var(--line)}
+button.alt:hover{border-color:var(--gold);background:var(--soft)}
+button.bad{background:transparent;color:var(--bad);border-color:var(--bad)}
+button.bad:hover{background:var(--bad);color:#fff}
+input,select,textarea{padding:.55rem .7rem;border:1.5px solid var(--line);border-radius:8px;background:var(--bg);max-width:100%}
+input:focus,select:focus,textarea:focus{border-color:var(--gold);outline:none;box-shadow:0 0 0 3px rgba(200,168,119,.3)}
+input[type=checkbox]{accent-color:var(--maroon);width:17px;height:17px;vertical-align:-3px;margin-right:6px}
+label{display:flex;flex-direction:column;font-size:13px;font-weight:600;gap:.3rem}
+.row{display:flex;gap:.8rem;flex-wrap:wrap;align-items:end}
+
+/* Tabs */
+nav{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:18px;border-bottom:1px solid var(--line);padding-bottom:12px}
+nav button{background:transparent;color:var(--mut);border:1.5px solid transparent}
+nav button:hover{background:var(--soft);color:var(--ink)}
+nav button.on{background:var(--maroon);color:#fff}
+
+/* Cards */
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px;margin-bottom:16px;box-shadow:var(--shadow)}
+h2,h3{font-family:var(--f-display);font-weight:600;color:var(--acc-text);margin:0 0 10px;letter-spacing:.02em;text-wrap:balance}
+h2{font-size:19px}h3{font-size:16px}
+.mut{color:var(--mut);font-size:13.5px}
+.item{display:flex;gap:.6rem;justify-content:space-between;align-items:center;flex-wrap:wrap;padding:.7rem 0;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums}
+.item:last-child{border-bottom:0}
+.item>span:first-child{min-width:0;flex:1 1 16rem}
+
+#msg{padding:.7rem 1rem;border-radius:10px;margin-bottom:16px;display:none;font-weight:500;border-left:4px solid}
+#msg.ok{display:block;background:var(--ok-bg);color:var(--ok-ink);border-color:var(--ok-ink)}
+#msg.err{display:block;background:var(--bad-bg);color:var(--bad);border-color:var(--bad)}
+
+/* Login */
+.auth{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:start}
+.auth .logo{grid-column:1/-1;display:flex;justify-content:center}
+.auth .logo img{height:150px;width:auto}
+.auth form{display:flex;flex-direction:column;gap:12px;align-items:stretch}
+.auth form button{align-self:flex-start}
+@media (max-width:720px){.auth{grid-template-columns:minmax(0,1fr)}}
+
+/* Day picker */
+.daybar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.daybar .when{font-family:var(--f-display);font-size:20px;font-weight:600;color:var(--acc-text)}
+.daybar .ctl{display:flex;align-items:center;gap:8px}
+.daybar .ctl button{width:40px;height:40px;padding:0;border-radius:50%}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:12px;color:var(--mut);margin:-4px 0 14px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.sw{width:14px;height:14px;border-radius:4px;border:1.5px solid var(--line);display:inline-block}
+.sw.free{border-color:var(--gold);background:var(--card)}.sw.mine{background:var(--maroon);border-color:var(--maroon)}.sw.shut{background:var(--shut)}
+
+/* Rooms */
+.rooms{display:grid;gap:12px;margin-bottom:16px}
+.room{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,2fr);gap:12px 16px;align-items:center;box-shadow:var(--shadow)}
+.room h3{margin:0}
+.room .cap{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold-ink);font-weight:600}
+@media (max-width:600px){.room{grid-template-columns:minmax(0,1fr)}}
+.slots{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.slot{border:1.5px solid var(--line);border-radius:10px;padding:10px 12px;text-align:left;background:var(--card);color:var(--ink);display:flex;flex-direction:column;gap:1px;min-height:66px;font-weight:400;font-size:14px;width:100%}
+.slot .sn{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+.slot .st{font-variant-numeric:tabular-nums;font-size:13px}
+.slot .ss{font-size:12px;color:var(--mut);font-weight:600}
+button.slot{border-color:var(--gold)}
+button.slot .sn{color:var(--gold-ink)}
+button.slot .ss{color:var(--ok-ink)}
+button.slot:hover{background:var(--soft)}
+.slot.sel,.slot.mine{background:var(--maroon);border-color:var(--maroon);color:#fff}
+.slot.sel .sn,.slot.sel .ss,.slot.mine .sn,.slot.mine .ss{color:#F1E3CC}
+button.slot.sel:hover{background:var(--maroon-deep)}
+.slot.shut,.slot.full{background:var(--shut);color:var(--shut-ink);border-color:transparent}
+.slot.shut .ss,.slot.full .ss{color:var(--shut-ink)}
+
+.confirm{border:1.5px solid var(--gold);padding:0;overflow:hidden}
+.confirm .hd{background:var(--maroon);color:#fff;padding:14px 18px;border-bottom:3px solid var(--gold)}
+.confirm .hd .eyebrow{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#E9D6B3;font-weight:600}
+.confirm .hd h3{color:#fff;margin:2px 0 0}
+.confirm form{padding:16px 18px}
+textarea{width:100%;max-width:32rem}
+footer{color:var(--mut);font-size:12.5px;text-align:center;padding-block:0 28px}
+@media (prefers-reduced-motion:no-preference){button{transition:background .12s,border-color .12s}}
 </style></head><body>
-<header><h1>Music Practice Rooms</h1><span id="who"></span><button class="alt" id="out" hidden>Log out</button></header>
-<main><div id="msg" role="status"></div><div id="app">Loading…</div></main>
+<header class="brand"><div class="wrap">
+  <a class="lockup" href="./" aria-label="Sexey's School practice room booking home"><img class="crest" src="assets/crest.png" alt=""><img class="wm" src="assets/wordmark.png" alt="Sexey's School"></a>
+  <div class="acct"><span id="who"></span><button id="out" hidden>Log out</button></div>
+</div></header>
+<section class="band"><div class="wrap"><div class="eyebrow">Music Department</div><h1>Practice Room Booking</h1></div></section>
+<main class="wrap"><div id="msg" role="status"></div><div id="app"><p class="mut">Loading…</p></div></main>
+<footer>Sexey's School Music Department · Problems with a booking? Speak to a member of the Music staff.</footer>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script>
 // Publishable (anon) key ONLY. Never put a service-role/secret key here.
@@ -33,11 +137,14 @@ const isSchoolEmail=e=>String(e||'').trim().toLowerCase().endsWith(SCHOOL_DOMAIN
 const $=s=>document.querySelector(s), app=$('#app');
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const SESS={break:'Break 11:05–11:25',lunch:'Lunch 12:25–13:15'}, DAYS=['','Mon','Tue','Wed','Thu','Fri'];
-let me=null, tab='book', sel=null, date=iso(new Date());
+const SN={break:['Break','11:05–11:25'],lunch:['Lunch','12:25–13:15']};
+const schoolDay=d=>{d=new Date(d);while(d.getDay()===0||d.getDay()===6)d.setDate(d.getDate()+1);return d};
+let me=null, tab='book', sel=null, date=iso(schoolDay(new Date()));
 function iso(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
 function flash(t,bad){const m=$('#msg');m.textContent=t||'';m.className=t?(bad?'err':'ok'):''}
 const q=r=>{if(r.error)throw r.error;return r.data};
 const fail=e=>flash(e.message||String(e),true);
+const fd=d=>new Date(d+'T12:00').toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'});
 const wdOf=d=>(new Date(d+'T12:00').getDay()+6)%7+1;
 
 async function boot(){
@@ -59,11 +166,12 @@ function shell(){
   ({book:bookView,mine:mineView,regs:regsView,all:allView,rules:rulesView})[tab]().catch(fail);
 }
 function authView(){
-  app.innerHTML=`<div class="card"><h2>Log in</h2><form id="f-login" class="row"><label>Email<input name="email" type="email" required autocomplete="username"></label>
+  app.innerHTML=`<div class="auth"><div class="logo"><img src="assets/logo.png" alt="Sexey's School, established 1891"></div>
+  <div class="card"><h2>Log in</h2><form id="f-login"><label>School email<input name="email" type="email" required autocomplete="username"></label>
   <label>Password<input name="pw" type="password" required autocomplete="current-password"></label><button>Log in</button></form></div>
-  <div class="card"><h2>New pupil? Create an account</h2><form id="f-signup" class="row"><label>Full name<input name="name" required></label>
+  <div class="card"><h2>New pupil? Create an account</h2><form id="f-signup"><label>Full name<input name="name" required autocomplete="name"></label>
   <label>School email (must end ${SCHOOL_DOMAIN})<input name="email" type="email" required placeholder="name${SCHOOL_DOMAIN}" pattern=".+@sexeys\.somerset\.sch\.uk" title="Use your ${SCHOOL_DOMAIN} school email address"></label><label>Password (8+ characters)<input name="pw" type="password" minlength="8" required autocomplete="new-password"></label><button>Create account</button></form>
-  <p class="mut">After creating an account you will complete your induction, agree to the Practice Room Agreement and register, then wait for staff approval.</p></div>`;
+  <p class="mut">After creating an account you will complete your induction, agree to the Practice Room Agreement and register, then wait for staff approval.</p></div></div>`;
 }
 function regView(){
   app.innerHTML=`<div class="card"><h2>Register to use the practice rooms</h2><form id="f-reg">
@@ -82,26 +190,34 @@ async function bookView(){
   const R=q(res),W=q(wk),C=q(cl),S=q(sl),B=q(bands),max=new Date();max.setDate(max.getDate()+28);
   const shut=(r,s)=>{const w=W.find(w=>(!w.resource_id||w.resource_id===r.id)&&w.weekday===wd&&(!w.session||w.session===s));
     const c=C.find(c=>(!c.resource_id||c.resource_id===r.id)&&(!c.session||c.session===s));return w?'Closed':c?(c.reason||'Closed'):null};
-  const cell=(r,s)=>{const x=shut(r,s);if(wd>5)return'<td class="shut">Weekend</td>';if(x)return`<td class="shut">${esc(x)}</td>`;
-    const u=S.filter(b=>b.resource_id===r.id&&b.session===s),n=u.reduce((a,b)=>a+b.seats,0);
-    if(r.id==='computers')return n>=r.capacity?'<td class="full">Full</td>':`<td class="${sel&&sel.r===r.id&&sel.s===s?'sel':''}"><button data-pick="${r.id}|${s}">${r.capacity-n} free</button></td>`;
-    if(u.length)return u[0].mine?'<td class="mine">Yours</td>':'<td class="full">Booked</td>';
-    return`<td class="${sel&&sel.r===r.id&&sel.s===s?'sel':''}"><button data-pick="${r.id}|${s}">Book</button></td>`};
-  v.innerHTML=`<div class="card"><label>Date<input type="date" id="d" value="${date}" min="${iso(new Date())}" max="${iso(max)}"></label></div>
-  <div class="card scroll"><table><tr><th>Space</th>${Object.values(SESS).map(s=>`<th>${s}</th>`).join('')}</tr>
-  ${R.map(r=>`<tr><th scope="row">${esc(r.name)}</th>${cell(r,'break')}${cell(r,'lunch')}</tr>`).join('')}</table></div>
-  ${sel?`<div class="card"><h3>Confirm: ${esc(R.find(r=>r.id===sel.r).name)}, ${date}, ${SESS[sel.s]}</h3><form id="f-book" class="row">
+  const slot=(cls,s,status,attr='')=>attr?`<button class="slot ${cls}" ${attr}><span class="sn">${SN[s][0]}</span><span class="st">${SN[s][1]}</span><span class="ss">${status}</span></button>`
+    :`<div class="slot ${cls}"><span class="sn">${SN[s][0]}</span><span class="st">${SN[s][1]}</span><span class="ss">${status}</span></div>`;
+  const cell=(r,s)=>{const x=shut(r,s);if(wd>5)return slot('shut',s,'Weekend');if(x)return slot('shut',s,esc(x));
+    const u=S.filter(b=>b.resource_id===r.id&&b.session===s),n=u.reduce((a,b)=>a+b.seats,0),on=sel&&sel.r===r.id&&sel.s===s?'sel':'';
+    const pick=`data-pick="${r.id}|${s}" aria-label="Book ${esc(r.name)}, ${SN[s][0]} ${SN[s][1]}"`;
+    if(r.id==='computers')return n>=r.capacity?slot('full',s,'Full'):slot(on,s,on?'Selected':`${r.capacity-n} of ${r.capacity} free`,pick);
+    if(u.length)return u[0].mine?slot('mine',s,'Your booking'):slot('full',s,'Booked');
+    return slot(on,s,on?'Selected':'Free',pick)};
+  const nice=new Date(date+'T12:00').toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'});
+  v.innerHTML=`<div class="card daybar"><div><div class="mut">Showing</div><div class="when">${nice}</div></div>
+   <div class="ctl"><button class="alt" data-step="-1" aria-label="Previous school day" ${date<=iso(new Date())?'disabled':''}>&#8592;</button>
+   <label class="sr" style="font-weight:600">Date<input type="date" id="d" value="${date}" min="${iso(new Date())}" max="${iso(max)}"></label>
+   <button class="alt" data-step="1" aria-label="Next school day" ${date>=iso(max)?'disabled':''}>&#8594;</button></div></div>
+  <div class="legend"><span><i class="sw free"></i>Free – tap to choose</span><span><i class="sw mine"></i>Yours or selected</span><span><i class="sw shut"></i>Booked or closed</span></div>
+  ${sel?`<div class="card confirm"><div class="hd"><div class="eyebrow">Confirm booking</div><h3>${esc(R.find(r=>r.id===sel.r).name)} · ${nice} · ${SESS[sel.s]}</h3></div><form id="f-book" class="row">
    ${sel.r==='computers'?`<label>Places<input name="seats" type="number" min="1" max="16" value="1"></label><label>Purpose (required)<input name="purpose" required minlength="5" placeholder="e.g. GCSE composition coursework"></label>`:''}
    ${B.length?`<label>Band (optional)<select name="band"><option value="">Just me</option>${B.map(b=>`<option value="${b.id}">${esc(b.name)}</option>`).join('')}</select></label>`:''}
-   <button>Confirm booking</button></form></div>`:''}`;
+   <button>Confirm booking</button><button type="button" class="alt" data-unpick="1">Cancel</button></form></div>`:''}
+  <div class="rooms">${R.map(r=>`<article class="room"><div><h3>${esc(r.name)}</h3>${r.capacity>1?`<div class="cap">${r.capacity} places</div>`:''}</div>
+   <div class="slots">${cell(r,'break')}${cell(r,'lunch')}</div></article>`).join('')}</div>`;
 }
 async function mineView(){
   const D=q(await sb.from('bookings').select('*,resources(name)').eq('user_id',me.id).gte('booking_date',iso(new Date())).order('booking_date'));
-  $('#view').innerHTML=`<div class="card"><h2>My upcoming bookings</h2>${D.length?D.map(b=>`<div class="item"><span>${b.booking_date} · ${SESS[b.session]} · ${esc(b.resources.name)}${b.resource_id==='computers'?` (${b.seats} place${b.seats>1?'s':''}: ${esc(b.purpose)})`:''}</span><button class="bad" data-cancel="${b.id}">Cancel</button></div>`).join(''):'<p class="mut">Nothing booked yet.</p>'}</div>`;
+  $('#view').innerHTML=`<div class="card"><h2>My upcoming bookings</h2>${D.length?D.map(b=>`<div class="item"><span>${fd(b.booking_date)} · ${SESS[b.session]} · ${esc(b.resources.name)}${b.resource_id==='computers'?` (${b.seats} place${b.seats>1?'s':''}: ${esc(b.purpose)})`:''}</span><button class="bad" data-cancel="${b.id}">Cancel</button></div>`).join(''):'<p class="mut">Nothing booked yet.</p>'}</div>`;
 }
 async function allView(){
   const D=q(await sb.from('bookings').select('*,resources(name),profiles(full_name),bands(name)').gte('booking_date',iso(new Date())).order('booking_date'));
-  $('#view').innerHTML=`<div class="card"><h2>All upcoming bookings</h2>${D.length?D.map(b=>`<div class="item"><span>${b.booking_date} · ${SESS[b.session]} · ${esc(b.resources.name)} · ${esc(b.profiles?.full_name)}${b.bands?' ('+esc(b.bands.name)+')':''}${b.purpose?' · '+esc(b.purpose):''}</span><button class="bad" data-cancel="${b.id}">Cancel</button></div>`).join(''):'<p class="mut">No bookings.</p>'}</div>`;
+  $('#view').innerHTML=`<div class="card"><h2>All upcoming bookings</h2>${D.length?D.map(b=>`<div class="item"><span>${fd(b.booking_date)} · ${SESS[b.session]} · ${esc(b.resources.name)} · ${esc(b.profiles?.full_name)}${b.bands?' ('+esc(b.bands.name)+')':''}${b.purpose?' · '+esc(b.purpose):''}</span><button class="bad" data-cancel="${b.id}">Cancel</button></div>`).join(''):'<p class="mut">No bookings.</p>'}</div>`;
 }
 async function regsView(){
   const P=q(await sb.from('profiles').select('*,bands(name,band_members(member_name,instrument))').eq('role','pupil').eq('registered',true).order('created_at',{ascending:false}));
@@ -155,6 +271,9 @@ document.addEventListener('click',async e=>{
   try{
     if(d.tab){tab=d.tab;sel=null;shell()}
     else if(d.pick){const[r,s]=d.pick.split('|');sel={r,s};bookView()}
+    else if(d.unpick){sel=null;bookView()}
+    else if(d.step){const x=new Date(date+'T12:00'),k=+d.step;do{x.setDate(x.getDate()+k)}while(x.getDay()===0||x.getDay()===6);
+      const t=new Date();t.setHours(0,0,0,0);const m=new Date();m.setDate(m.getDate()+28);if(x<t||x>m)return;date=iso(x);sel=null;await bookView()}
     else if(d.cancel){if(confirm('Cancel this booking?')){q(await sb.from('bookings').delete().eq('id',d.cancel));flash('Booking cancelled.');shell()}}
     else if(d.appr){const[i,v]=d.appr.split('|');q(await sb.from('profiles').update({approved:v==='1',rejected:false}).eq('id',i));regsView()}
     else if(d.rej){q(await sb.from('profiles').update({rejected:true,approved:false}).eq('id',d.rej));regsView()}
