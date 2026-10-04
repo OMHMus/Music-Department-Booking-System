@@ -2,6 +2,7 @@
 -- Weekly limit: pupils can book at most 3 sessions per school week
 -- =====================================================================
 -- STATUS: applied to the live database on 4 Oct 2026 (via Supabase connector)
+--         SUPERSEDED for practice_check_booking by 20261004_exam_students.sql
 --         and tested in a rolled-back transaction: 3 allowed, 4th blocked.
 --
 -- * A "week" is Monday to Sunday (bookings are weekdays only).
