@@ -90,6 +90,9 @@ h2{font-size:19px}h3{font-size:16px}
 .sw{width:14px;height:14px;border-radius:4px;border:1.5px solid var(--line);display:inline-block}
 .sw.free{border-color:var(--gold);background:var(--card)}.sw.mine{background:var(--maroon);border-color:var(--maroon)}.sw.shut{background:var(--shut)}
 
+.quota{display:flex;align-items:center;gap:14px;flex-wrap:wrap;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 16px;margin-bottom:14px;font-size:14px}
+.quota .qbar{display:flex;gap:5px}.quota .qbar i{width:28px;height:8px;border-radius:4px;background:var(--shut)}.quota .qbar i.on{background:var(--maroon)}
+.quota.quota-full{border-color:var(--gold);background:var(--soft)}
 /* Rooms */
 .rooms{display:grid;gap:12px;margin-bottom:16px}
 .room{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,2fr);gap:12px 16px;align-items:center;box-shadow:var(--shadow)}
@@ -138,6 +141,7 @@ const isSchoolEmail=e=>String(e||'').trim().toLowerCase().endsWith(SCHOOL_DOMAIN
 const $=s=>document.querySelector(s), app=$('#app');
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const SESS={break:'Break 11:05–11:25',lunch:'Lunch 12:25–13:15'}, DAYS=['','Mon','Tue','Wed','Thu','Fri'];
+const WEEKLY_LIMIT=3; // must match weekly_limit in supabase/migrations/20261004_weekly_limit.sql
 const SN={break:['Break','11:05–11:25'],lunch:['Lunch','12:25–13:15']};
 const schoolDay=d=>{d=new Date(d);while(d.getDay()===0||d.getDay()===6)d.setDate(d.getDate()+1);return d};
 let me=null, tab='book', sel=null, date=iso(schoolDay(new Date()));
@@ -200,6 +204,10 @@ async function bookView(){
   const [res,wk,cl,sl,bands]=await Promise.all([sb.from('resources').select('*').order('sort'),sb.from('weekly_closures').select('*'),
     sb.from('closures').select('*').eq('closure_date',date),sb.rpc('get_slots',{d1:date,d2:date}),sb.from('bands').select('id,name').eq('lead_id',me.id)]);
   const R=q(res),W=q(wk),C=q(cl),S=q(sl),B=q(bands),max=new Date();max.setDate(max.getDate()+28);
+  const staff=me.role==='staff', mon=new Date(date+'T12:00');mon.setDate(mon.getDate()-(wdOf(date)-1));
+  const sun=new Date(mon);sun.setDate(sun.getDate()+6);
+  let usedN=0;if(!staff){const r=await sb.from('bookings').select('id',{count:'exact',head:true}).eq('user_id',me.id).gte('booking_date',iso(mon)).lte('booking_date',iso(sun));if(r.error)throw r.error;usedN=r.count||0}
+  const full=!staff&&usedN>=WEEKLY_LIMIT;
   const shut=(r,s)=>{const w=W.find(w=>(!w.resource_id||w.resource_id===r.id)&&w.weekday===wd&&(!w.session||w.session===s));
     const c=C.find(c=>(!c.resource_id||c.resource_id===r.id)&&(!c.session||c.session===s));return w?'Closed':c?(c.reason||'Closed'):null};
   const slot=(cls,s,status,attr='')=>attr?`<button class="slot ${cls}" ${attr}><span class="sn">${SN[s][0]}</span><span class="st">${SN[s][1]}</span><span class="ss">${status}</span></button>`
@@ -207,14 +215,19 @@ async function bookView(){
   const cell=(r,s)=>{const x=shut(r,s);if(wd>5)return slot('shut',s,'Weekend');if(x)return slot('shut',s,esc(x));
     const u=S.filter(b=>b.resource_id===r.id&&b.session===s),n=u.reduce((a,b)=>a+b.seats,0),on=sel&&sel.r===r.id&&sel.s===s?'sel':'';
     const pick=`data-pick="${r.id}|${s}" aria-label="Book ${esc(r.name)}, ${SN[s][0]} ${SN[s][1]}"`;
+    if(r.id==='computers'&&u.some(b=>b.mine))return slot('mine',s,'Your booking');
+    if(r.id==='computers'&&full)return slot('full',s,'Weekly limit reached');
     if(r.id==='computers')return n>=r.capacity?slot('full',s,'Full'):slot(on,s,on?'Selected':`${r.capacity-n} of ${r.capacity} free`,pick);
     if(u.length)return u[0].mine?slot('mine',s,'Your booking'):slot('full',s,'Booked');
+    if(full)return slot('full',s,'Weekly limit reached');
     return slot(on,s,on?'Selected':'Free',pick)};
   const nice=new Date(date+'T12:00').toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'});
   v.innerHTML=`<div class="card daybar"><div><div class="mut">Showing</div><div class="when">${nice}</div></div>
    <div class="ctl"><button class="alt" data-step="-1" aria-label="Previous school day" ${date<=iso(new Date())?'disabled':''}>&#8592;</button>
    <label class="sr" style="font-weight:600">Date<input type="date" id="d" value="${date}" min="${iso(new Date())}" max="${iso(max)}"></label>
    <button class="alt" data-step="1" aria-label="Next school day" ${date>=iso(max)?'disabled':''}>&#8594;</button></div></div>
+  ${staff?'':`<div class="quota${full?' quota-full':''}" role="status"><div class="qbar">${Array.from({length:WEEKLY_LIMIT},(_,i)=>`<i class="${i<usedN?'on':''}"></i>`).join('')}</div>
+   <div><strong>${usedN} of ${WEEKLY_LIMIT}</strong> sessions booked for the week of ${mon.toLocaleDateString('en-GB',{day:'numeric',month:'long'})}${full?'. You can book again next week, or cancel an upcoming booking to free one up.':''}</div></div>`}
   <div class="legend"><span><i class="sw free"></i>Free – tap to choose</span><span><i class="sw mine"></i>Yours or selected</span><span><i class="sw shut"></i>Booked or closed</span></div>
   ${sel?`<div class="card confirm"><div class="hd"><div class="eyebrow">Confirm booking</div><h3>${esc(R.find(r=>r.id===sel.r).name)} · ${nice} · ${SESS[sel.s]}</h3></div><form id="f-book" class="row">
    ${sel.r==='computers'?`<label>Places<input name="seats" type="number" min="1" max="16" value="1"></label><label>Purpose (required)<input name="purpose" required minlength="5" placeholder="e.g. GCSE composition coursework"></label>`:''}
