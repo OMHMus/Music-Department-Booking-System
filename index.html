@@ -143,7 +143,14 @@ let me=null, tab='book', sel=null, date=iso(schoolDay(new Date()));
 function iso(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
 function flash(t,bad){const m=$('#msg');m.textContent=t||'';m.className=t?(bad?'err':'ok'):''}
 const q=r=>{if(r.error)throw r.error;return r.data};
-const fail=e=>flash(e.message||String(e),true);
+// Turn database refusals into messages a pupil can act on
+const errText=e=>{const m=String(e?.message||e||''),c=e?.code;
+  if(c==='23505'&&/one_place_per_pupil/.test(m))return'You already have a booking in that session. Cancel it first if you want a different room.';
+  if(c==='23505')return'Someone has just booked that slot. The timetable has been refreshed; please pick another.';
+  if(c==='42501'||/row-level security/i.test(m))return'You can\'t do that yet. Your registration may still be waiting for staff approval.';
+  if(c==='23514')return'That booking isn\'t allowed (bookings are for Break or Lunch on school days).';
+  return m};
+const fail=e=>{flash(errText(e),true);if(tab==='book'&&$('#view')&&(e?.code==='23505'||e?.code==='P0001')){sel=null;bookView().catch(()=>{})}};
 const fd=d=>new Date(d+'T12:00').toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'});
 const wdOf=d=>(new Date(d+'T12:00').getDay()+6)%7+1;
 
