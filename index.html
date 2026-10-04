@@ -178,7 +178,8 @@ footer{color:var(--mut);font-size:12.5px;text-align:center;padding-block:0 28px}
 // Publishable (anon) key ONLY. Never put a service-role/secret key here.
 const SB_URL='https://cukylemtaiogtfnwuwgq.supabase.co', SB_KEY='sb_publishable_u0vyX_4O8UIEHhSm-f3wmg_oT8bNymk';
 const sb=supabase.createClient(SB_URL,SB_KEY);
-// Only school email addresses may create an account (also enforced in the database by a trigger on auth.users).
+// Only school email addresses may create an account. Also enforced in the database by the
+// practice_school_email_only trigger on auth.users (supabase/migrations/20261004_school_email_only.sql).
 const SCHOOL_DOMAIN='@sexeys.somerset.sch.uk';
 const isSchoolEmail=e=>String(e||'').trim().toLowerCase().endsWith(SCHOOL_DOMAIN);
 const $=s=>document.querySelector(s), app=$('#app');
@@ -195,6 +196,7 @@ const q=r=>{if(r.error)throw r.error;return r.data};
 const errText=e=>{const m=String(e?.message||e||''),c=e?.code;
   if(e?.status===504||/timeout|deadline|Failed to fetch|NetworkError|AuthRetryableFetchError/i.test(m+' '+(e?.name||'')))return'The booking system is taking too long to respond. Please wait a minute and try again. If it keeps happening, tell the Music Department.';
   if(/error sending confirmation|sending email/i.test(m))return'Your account could not be created because the confirmation email failed to send. Please tell the Music Department.';
+  if(/can only be created with|Database error saving new user/i.test(m))return'Accounts can only be created with a '+SCHOOL_DOMAIN+' school email address.';
   if(/already registered/i.test(m))return'An account with this email already exists. Try logging in instead.';
   if(/Invalid login credentials/i.test(m))return'That email or password is not right. Please check and try again.';
   if(c==='23505'&&/one_place_per_pupil/.test(m))return'You already have a booking in that session. Cancel it first if you want a different room.';
