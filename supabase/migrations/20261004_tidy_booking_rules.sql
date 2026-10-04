@@ -1,6 +1,6 @@
 -- =====================================================================
 -- Tidy-up after 20261004_harden_bookings.sql
--- STATUS: written 4 Oct 2026, NOT YET APPLIED to the live database.
+-- STATUS: applied to the live database on 4 Oct 2026 (via SQL Editor).
 -- =====================================================================
 -- The live database already had most of those protections:
 --   policies k_sel / k_ins / k_del, trigger validate_booking (approval,
