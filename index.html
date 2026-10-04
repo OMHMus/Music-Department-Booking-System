@@ -43,6 +43,7 @@ main.wrap{padding-block:22px 48px}
 button{background:var(--maroon);color:#fff;border:1.5px solid transparent;border-radius:999px;padding:.5rem 1.1rem;cursor:pointer;font-weight:600;font-size:14px}
 button:hover{background:var(--maroon-deep)}
 button:disabled{opacity:.6;cursor:progress}
+button[disabled][title]{cursor:not-allowed}
 button.alt{background:var(--card);color:var(--ink);border-color:var(--line)}
 button.alt:hover{border-color:var(--gold);background:var(--soft)}
 button.bad{background:transparent;color:var(--bad);border-color:var(--bad)}
@@ -137,6 +138,48 @@ button.slot.sel:hover{background:var(--maroon-deep)}
 .confirm .hd h3{color:#fff;margin:2px 0 0}
 .confirm form{padding:16px 18px}
 textarea{width:100%;max-width:32rem}
+
+/* Joining steps: induction -> agreement -> details */
+.steps{display:flex;gap:6px;list-style:none;margin:0 0 16px;padding:0;counter-reset:st}
+.steps li{flex:1 1 0;min-width:0;display:flex;align-items:center;gap:8px;padding:10px 12px;border-radius:10px;background:var(--card);border:1px solid var(--line);font-size:13px;font-weight:600;color:var(--mut);counter-increment:st}
+.steps li::before{content:counter(st);flex:none;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;border:1.5px solid var(--line);font-size:12.5px;font-variant-numeric:tabular-nums}
+.steps li.now{border-color:var(--gold);background:var(--soft);color:var(--ink)}
+.steps li.now::before{background:var(--maroon);border-color:var(--maroon);color:#fff}
+.steps li.done{color:var(--ok-ink)}
+.steps li.done::before{content:"\2713";background:var(--ok-bg);border-color:var(--ok-ink);color:var(--ok-ink)}
+.steps .lbl{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.steps .sm{display:none}
+@media (max-width:560px){.steps .lbl .opt{display:none}.steps .lbl .sm{display:inline}.steps li{flex-direction:column;gap:4px;padding:8px 4px;text-align:center;font-size:12.5px}}
+.formal{border:1.5px solid var(--gold);padding:0;overflow:hidden}
+.formal .hd{background:var(--maroon);color:#fff;padding:16px 18px;border-bottom:3px solid var(--gold);display:flex;gap:14px;align-items:center}
+.formal .hd img{height:52px;width:auto;flex:none}
+.formal .hd .eyebrow{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#E9D6B3;font-weight:600}
+.formal .hd h2{color:#fff;margin:2px 0 0}
+.formal form{padding:18px}
+.formal .lead{margin:0 0 14px;max-width:44rem}
+.group{border:0;padding:0;margin:0 0 18px}
+.group legend{font-family:var(--f-display);font-weight:600;color:var(--acc-text);font-size:15px;padding:0;margin-bottom:6px;letter-spacing:.02em}
+.tick{display:flex;flex-direction:row;align-items:flex-start;gap:10px;font-weight:400;font-size:14.5px;padding:9px 10px;border-radius:8px;border:1px solid transparent;cursor:pointer}
+.tick:hover{background:var(--soft)}
+.tick input{flex:none;margin:2px 0 0}
+.tick:has(input:checked){border-color:var(--line);background:var(--bg)}
+.prog{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--mut);margin:0 0 14px;font-variant-numeric:tabular-nums}
+.prog .bar{flex:1;max-width:14rem;height:6px;border-radius:3px;background:var(--shut);overflow:hidden}
+.prog .bar i{display:block;height:100%;background:var(--maroon);transition:width .15s}
+.terms{counter-reset:cl;list-style:none;margin:0 0 16px;padding:14px 16px;max-width:46rem;background:var(--bg);border:1px solid var(--line);border-radius:10px}
+.terms li{counter-increment:cl;display:grid;grid-template-columns:2rem minmax(0,1fr);padding:8px 0;border-bottom:1px solid var(--line)}
+.terms li:last-child{border-bottom:0}
+.terms li::before{content:counter(cl) ".";font-family:var(--f-display);font-weight:600;color:var(--gold-ink)}
+.terms b{display:block;color:var(--ink)}
+.sign{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:end;max-width:36rem;margin:6px 0 16px}
+.sign input{font-family:var(--f-display);font-size:18px;letter-spacing:.02em}
+.sign .dt{font-size:13px;color:var(--mut);padding-bottom:.6rem;font-variant-numeric:tabular-nums}
+@media (max-width:560px){.sign{grid-template-columns:minmax(0,1fr)}}
+.actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}
+.chip{font-size:11.5px;font-weight:600;padding:2px 8px;border-radius:999px;background:var(--ok-bg);color:var(--ok-ink)}
+.chip.no{background:var(--bad-bg);color:var(--bad)}
+@media print{.brand .acct,.band,nav,.steps,.actions,footer,#msg{display:none}.card{box-shadow:none}}
 footer{color:var(--mut);font-size:12.5px;text-align:center;padding-block:0 28px}
 @media (prefers-reduced-motion:no-preference){button{transition:background .12s,border-color .12s}}
 </style></head><body>
@@ -152,7 +195,8 @@ footer{color:var(--mut);font-size:12.5px;text-align:center;padding-block:0 28px}
 // Publishable (anon) key ONLY. Never put a service-role/secret key here.
 const SB_URL='https://cukylemtaiogtfnwuwgq.supabase.co', SB_KEY='sb_publishable_u0vyX_4O8UIEHhSm-f3wmg_oT8bNymk';
 const sb=supabase.createClient(SB_URL,SB_KEY);
-// Only school email addresses may create an account (also enforced in the database by a trigger on auth.users).
+// Only school email addresses may create an account. Also enforced in the database by the
+// practice_school_email_only trigger on auth.users (supabase/migrations/20261004_school_email_only.sql).
 const SCHOOL_DOMAIN='@sexeys.somerset.sch.uk';
 const isSchoolEmail=e=>String(e||'').trim().toLowerCase().endsWith(SCHOOL_DOMAIN);
 const $=s=>document.querySelector(s), app=$('#app');
@@ -170,6 +214,7 @@ const q=r=>{if(r.error)throw r.error;return r.data};
 const errText=e=>{const m=String(e?.message||e||''),c=e?.code;
   if(e?.status===504||/timeout|deadline|Failed to fetch|NetworkError|AuthRetryableFetchError/i.test(m+' '+(e?.name||'')))return'The booking system is taking too long to respond. Please wait a minute and try again. If it keeps happening, tell the Music Department.';
   if(/error sending confirmation|sending email/i.test(m))return'Your account could not be created because the confirmation email failed to send. Please tell the Music Department.';
+  if(/can only be created with|Database error saving new user/i.test(m))return'Accounts can only be created with a '+SCHOOL_DOMAIN+' school email address.';
   if(/already registered/i.test(m))return'An account with this email already exists. Try logging in instead.';
   if(/Invalid login credentials/i.test(m))return'That email or password is not right. Please check and try again.';
   if(c==='23505'&&/one_place_per_pupil/.test(m))return'You already have a booking in that session. Cancel it first if you want a different room.';
@@ -208,12 +253,82 @@ function authView(){
   <label>School email (must end ${SCHOOL_DOMAIN})<input name="email" type="email" required placeholder="name${SCHOOL_DOMAIN}" pattern=".+@sexeys\.somerset\.sch\.uk" title="Use your ${SCHOOL_DOMAIN} school email address"></label><label>Password (8+ characters)<input name="pw" type="password" minlength="8" required autocomplete="new-password"></label><button>Create account</button></form>
   <p class="mut">After creating an account you will complete your induction, agree to the Practice Room Agreement and register, then wait for staff approval.</p></div></div>`;
 }
+// ---------------------------------------------------------------------
+// Joining steps for pupils: 1 induction checklist, 2 agreement, 3 details.
+// Each step is saved as it is completed (see 20261004_induction_agreement.sql).
+// Change the wording here, and bump the version, if the department's rules change.
+// ---------------------------------------------------------------------
+const INDUCTION={version:'2026-10',groups:[
+  ['Booking',[
+    ['book','I know how to book a space in this app: Break (11:05–11:25) or Lunch (12:25–13:15) on school days, up to 4 weeks ahead.'],
+    ['limit','I know I can book up to 3 sessions a week, and how to cancel a booking I can no longer use.'],
+    ['staff','I know which member of Music staff to go to for help during break and lunch.']]],
+  ['The spaces',[
+    ['where','I know where the Music Classroom, PR1, PR2, PR3, the Studio, the Ensemble Room and the Music Tech computers are.'],
+    ['who','I know that only I, and the members of my registered band, may use a space I have booked.']]],
+  ['Safety',[
+    ['fire','I know the fire exits and the assembly point for the Music block.'],
+    ['report','I know to report any damage, faults or injuries to Music staff straight away.'],
+    ['ears','I know to keep volume at a safe level and to use ear protection for loud playing, such as drums or amplified band practice.']]],
+  ['Equipment',[
+    ['power','I have been shown how to switch amps, PA and keyboards on and off safely, and I know not to move or unplug mains equipment.'],
+    ['kit','I know how to set up and pack away drum kits, stands, cables and microphones.'],
+    ['perm','I know I may only use department instruments and equipment I have been given permission to use.'],
+    ['pcs','I know how to log in to the Music Tech computers, save work to my own area, and not to install software or change settings.']]],
+  ['Leaving the space',[
+    ['tidy','I know how to leave a space ready for the next person: equipment off, chairs and stands back, rubbish taken away, windows and door closed.'],
+    ['food','I know that no food or drink is allowed in the Music rooms, apart from water in a bottle with a lid.']]]]};
+const AGREEMENT={version:'2026-10b',title:'Booking and Practice Room Agreement',clauses:[
+  ['Booking','I will only use a space that I have booked, or that Music staff have let me use, and only at the time I booked it.'],
+  ['Cancelling','If I can no longer use a booking, I will cancel it as soon as I know, so another pupil can have it.'],
+  ['My account','I will only book for myself, or for a registered band I am a member of. I will not share my login or book on someone else\'s account.'],
+  ['Who is in the room','Only I and the members of my registered band will be in the space during my booking.'],
+  ['Using the time well','I will use my booking for practice, rehearsal or music coursework.'],
+  ['Care of equipment','I will treat the rooms, instruments and equipment with care, and only use things I have permission to use. I will not change other people\'s set-ups or take equipment out of the room.'],
+  ['Safety','I will follow what I learned in my induction, keep volume at a safe level, and report damage, faults or injuries to Music staff straight away.'],
+  ['Food and drink','I will not eat or drink in the Music rooms, apart from water in a bottle with a lid.'],
+  ['Leaving the space','I will leave the space as I found it, with equipment switched off, furniture back, rubbish removed, windows and door closed, and I will finish on time for the next session.'],
+  ['Behaviour','The school\'s behaviour expectations apply in the Music rooms, and I will follow instructions from Music staff.'],
+  ['If I break this agreement','I understand that the Music Department may cancel my bookings, or suspend or remove my access to the practice rooms.']]};
+const IND_N=INDUCTION.groups.reduce((a,g)=>a+g[1].length,0);
+// Unregistered pupils must complete the CURRENT versions; registered pupils keep what they agreed to.
+const indOK=p=>p.induction_done&&(p.registered||p.induction_version===INDUCTION.version);
+const agrOK=p=>p.agreement_signed&&(p.registered||p.agreement_version===AGREEMENT.version);
+const fdt=t=>new Date(t).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
+const normName=s=>String(s||'').trim().replace(/\s+/g,' ').toLowerCase();
+function stepsBar(n){
+  return `<ol class="steps" aria-label="Steps to join">${['Induction<span class="opt">&nbsp;checklist</span>','Agreement','<span class="opt">Your details</span><span class="sm">Details</span>']
+    .map((t,i)=>`<li class="${i+1<n?'done':i+1===n?'now':''}"${i+1===n?' aria-current="step"':''}><span class="lbl">${t}</span></li>`).join('')}</ol>`}
+const formalHd=(eb,h)=>`<div class="hd"><img src="assets/crest.png" alt=""><div><div class="eyebrow">${eb}</div><h2>${h}</h2></div></div>`;
 function regView(){
-  app.innerHTML=`<div class="card"><h2>Register to use the practice rooms</h2><form id="f-reg">
-  <p><label><span><input type="checkbox" name="ind" required> I have completed the Music Department induction</span></label></p>
-  <p><label><span><input type="checkbox" name="agr" required> I agree to the Practice Room Agreement</span></label></p>
+  if(!indOK(me))return inductionView();
+  if(!agrOK(me))return agreementView();
+  detailsView();
+}
+function inductionView(){
+  app.innerHTML=stepsBar(1)+`<div class="card formal">${formalHd('Step 1 of 3','Music Department induction checklist')}<form id="f-ind">
+  <p class="lead">Your induction is given by a member of Music staff. Tick each item to confirm you have been shown it and understand it. If you haven't been shown something yet, ask Music staff before you tick it.</p>
+  <div class="prog"><span class="bar"><i style="width:0"></i></span><span id="indn" aria-live="polite">0 of ${IND_N} confirmed</span></div>
+  ${INDUCTION.groups.map(([h,items])=>`<fieldset class="group"><legend>${esc(h)}</legend>${items.map(([id,t])=>
+    `<label class="tick"><input type="checkbox" name="i_${id}" required><span>${esc(t)}</span></label>`).join('')}</fieldset>`).join('')}
+  <div class="actions"><button>Confirm my induction</button><span class="mut">Each step is saved, so you can finish later.</span></div></form></div>`;
+}
+function agreementView(){
+  const today=new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
+  app.innerHTML=stepsBar(2)+`<div class="card formal">${formalHd('Step 2 of 3',AGREEMENT.title)}<form id="f-agr">
+  <p class="lead">Read the agreement carefully. By signing it you agree to keep to it every time you book and use a Music Department space.</p>
+  <ol class="terms">${AGREEMENT.clauses.map(([h,t])=>`<li><span><b>${esc(h)}</b>${esc(t)}</span></li>`).join('')}</ol>
+  <label class="tick"><input type="checkbox" name="read" required><span>I have read the ${AGREEMENT.title} and I agree to keep to it.</span></label>
+  <label class="tick"><input type="checkbox" name="cons" required><span>I understand that if I break it, my bookings may be cancelled and my access to the practice rooms may be suspended or removed.</span></label>
+  <div class="sign"><label>Sign by typing your full name<input name="sig" required minlength="3" autocomplete="off" spellcheck="false" placeholder="${esc(me.full_name)}"></label><span class="dt">Date: ${today}</span></div>
+  <div class="actions"><button>Sign the agreement</button><button type="button" class="alt" data-print="1">Print a copy</button></div></form></div>`;
+}
+function detailsView(){
+  app.innerHTML=stepsBar(3)+`<div class="card formal">${formalHd('Step 3 of 3','Register to use the practice rooms')}<form id="f-reg">
+  <div class="chips" style="margin:0 0 14px"><span class="chip">Induction confirmed</span><span class="chip">Agreement signed${me.agreement_signature?' as '+esc(me.agreement_signature):''}</span></div>
   <div class="row"><label>Year group<input name="year" type="number" min="7" max="13" required></label><label>Your instrument(s)<input name="inst" required></label></div>
   <p class="mut">Everyone registers individually. Want to rehearse with others? Once you're approved, set up your band in <b>My bands</b> and invite your band-mates. Each of them needs their own account.</p>
+  <p class="mut">Music staff will check your registration before you can book.</p>
   <p><button>Send registration</button></p></form></div>`;
 }
 async function bookView(){
@@ -273,8 +388,12 @@ async function allView(){
 async function regsView(){
   const P=q(await sb.from('profiles').select('*').eq('role','pupil').eq('registered',true).order('created_at',{ascending:false}));
   const examSel=p=>`<label class="exam">Exam course<select data-exam="${p.id}" aria-label="Exam course for ${esc(p.full_name)}"><option value="">None</option>${Object.entries(EXAM).map(([k,l])=>`<option value="${k}" ${p.exam_course===k?'selected':''}>${l}</option>`).join('')}</select></label>`;
-  const row=p=>`<div class="item"><span>${p.exam_course?`<span class="badge">${EXAM[p.exam_course]}</span> `:''}<b>${esc(p.full_name)}</b> · Y${p.year_group} · ${esc(p.instruments)}</span>
-   <span class="acts">${p.approved?`${examSel(p)}<button class="alt" data-appr="${p.id}|0">Revoke</button>`:`<button data-appr="${p.id}|1">Approve</button> <button class="bad" data-rej="${p.id}">Reject</button>`}</span></div>`;
+  const ver=v=>v&&v!=='legacy'&&v!==INDUCTION.version&&v!==AGREEMENT.version?` (v${esc(v)})`:'';
+  const checks=p=>`<span class="chips"><span class="chip${p.induction_done?'':' no'}">${p.induction_done?`Induction ${p.induction_done_at?fdt(p.induction_done_at):'confirmed'}${ver(p.induction_version)}`:'Induction not done'}</span>
+   <span class="chip${p.agreement_signed?'':' no'}">${p.agreement_signed?`Agreement signed${p.agreement_signature?' as '+esc(p.agreement_signature):''}${p.agreement_signed_at?' '+fdt(p.agreement_signed_at):''}${ver(p.agreement_version)}`:'Agreement not signed'}</span></span>`;
+  const ready=p=>p.induction_done&&p.agreement_signed;
+  const row=p=>`<div class="item"><span>${p.exam_course?`<span class="badge">${EXAM[p.exam_course]}</span> `:''}<b>${esc(p.full_name)}</b> · Y${p.year_group} · ${esc(p.instruments)}${checks(p)}</span>
+   <span class="acts">${p.approved?`${examSel(p)}<button class="alt" data-appr="${p.id}|0">Revoke</button>`:`<button data-appr="${p.id}|1"${ready(p)?'':' disabled title="Induction and agreement must be completed first"'}>Approve</button> <button class="bad" data-rej="${p.id}">Reject</button>`}</span></div>`;
   const pend=P.filter(p=>!p.approved&&!p.rejected),ok=P.filter(p=>p.approved),rej=P.filter(p=>p.rejected);
   $('#view').innerHTML=`<div class="card"><h2>Awaiting approval (${pend.length})</h2>${pend.map(row).join('')||'<p class="mut">None.</p>'}</div>
   <div class="card"><h2>Approved (${ok.length})</h2>${ok.map(row).join('')||'<p class="mut">None.</p>'}</div>
@@ -342,15 +461,25 @@ document.addEventListener('submit',async e=>{
   e.preventDefault();const id=e.target.id,f=Object.fromEntries(new FormData(e.target));flash('');
   const btn=e.submitter||e.target.querySelector('button:not([type=button])'),label=btn?.textContent;
   if(btn?.disabled)return;
-  if(btn){btn.disabled=true;btn.textContent=({'f-login':'Logging in…','f-signup':'Creating account…','f-reg':'Sending…','f-book':'Booking…','f-band':'Creating…','f-inv':'Inviting…'})[id]||'Saving…'}
+  if(btn){btn.disabled=true;btn.textContent=({'f-login':'Logging in…','f-signup':'Creating account…','f-reg':'Sending…','f-ind':'Saving…','f-agr':'Signing…','f-book':'Booking…','f-band':'Creating…','f-inv':'Inviting…'})[id]||'Saving…'}
   try{
     if(id==='f-login'){q(await sb.auth.signInWithPassword({email:f.email,password:f.pw}));boot()}
     else if(id==='f-signup'){
       if(!isSchoolEmail(f.email))throw new Error('Accounts can only be created with a '+SCHOOL_DOMAIN+' email address.');
       const r=q(await sb.auth.signUp({email:f.email.trim(),password:f.pw,options:{data:{full_name:f.name.trim()}}}));
       if(r.session)boot();else flash('Account created. Check your email to confirm it, then log in.')}
+    else if(id==='f-ind'){
+      const items=Object.keys(f).filter(k=>k.startsWith('i_')).map(k=>k.slice(2));
+      if(items.length<IND_N)throw new Error('Tick every item to confirm your induction.');
+      q(await sb.from('profiles').update({induction_done:true,induction_version:INDUCTION.version,induction_items:items}).eq('id',me.id));
+      boot()}
+    else if(id==='f-agr'){
+      const sig=String(f.sig||'').trim().replace(/\s+/g,' ');
+      if(me.full_name&&normName(sig)!==normName(me.full_name))throw new Error('Type your full name exactly as it is on your account: '+me.full_name);
+      q(await sb.from('profiles').update({agreement_signed:true,agreement_version:AGREEMENT.version,agreement_signature:sig}).eq('id',me.id));
+      boot()}
     else if(id==='f-reg'){
-      q(await sb.from('profiles').update({registered:true,reg_type:'individual',year_group:+f.year,instruments:f.inst,induction_done:true,agreement_signed:true}).eq('id',me.id));
+      q(await sb.from('profiles').update({registered:true,reg_type:'individual',year_group:+f.year,instruments:f.inst}).eq('id',me.id));
       boot()}
     else if(id==='f-book'){
       const R=sel.r;q(await sb.from('bookings').insert({resource_id:R,booking_date:date,session:sel.s,user_id:me.id,
@@ -370,6 +499,7 @@ document.addEventListener('click',async e=>{
   const b=e.target.closest('button');if(!b)return;const d=b.dataset;flash('');
   try{
     if(d.tab){tab=d.tab;sel=null;shell()}
+    else if(d.print)window.print();
     else if(d.pick){const[r,s]=d.pick.split('|');sel={r,s};bookView()}
     else if(d.unpick){sel=null;bookView()}
     else if(d.step){const x=new Date(date+'T12:00'),k=+d.step;do{x.setDate(x.getDate()+k)}while(x.getDay()===0||x.getDay()===6);
@@ -391,6 +521,8 @@ document.addEventListener('change',e=>{
   if(e.target.dataset.exam){const el=e.target,v=el.value||null;el.disabled=true;flash('');
     sb.from('profiles').update({exam_course:v}).eq('id',el.dataset.exam).then(r=>{if(r.error)throw r.error;
       flash(v?`Marked as ${EXAM[v]}: 4 sessions a week and unlimited computer bookings.`:'Exam course removed: back to 3 sessions a week.');return regsView()}).catch(fail).finally(()=>{el.disabled=false})}
+  if(e.target.closest('#f-ind')){const n=document.querySelectorAll('#f-ind input:checked').length;
+    $('#indn').textContent=`${n} of ${IND_N} confirmed`;$('#f-ind .bar i').style.width=(100*n/IND_N)+'%'}
 });
 $('#out').onclick=async()=>{await sb.auth.signOut();tab='book';boot()};
 boot();
